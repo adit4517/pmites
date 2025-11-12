@@ -1,18 +1,37 @@
+// File: client/src/App.js
+
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
-import LoginPage from './pages/LoginPage';
-import DashboardPage from './pages/DashboardPage';
-import InputPmiPage from './pages/InputPmiPage';
-import DataPmiPage from './pages/DataPmiPage';
-import Navbar from './components/common/Navbar'; // Akan dibuat
-import './App.css'; // Global CSS
 
-// Contoh sederhana AuthContext (bisa lebih kompleks)
+// Public Pages
+import LandingPage from './pages/public/LandingPage';
+import LoginPage from './pages/public/LoginPage';
+import RegisterPage from './pages/public/RegisterPage';
+
+// Admin Pages
+import DashboardPage from './pages/admin/DashboardPage';
+import InputPmiPage from './pages/admin/InputPmiPage';
+import DataPmiPage from './pages/admin/DataPmiPage';
+
+// User PMI Pages
+import UserDashboard from './pages/user/UserDashboard';
+import ApplicationForm from './pages/user/ApplicationForm';
+import ApplicationEdit from './pages/user/ApplicationEdit';
+import ApplicationStatus from './pages/user/ApplicationStatus';
+import UserProfile from './pages/user/UserProfile';
+
+// Components
+import Navbar from './components/common/Navbar';
+import UserNavbar from './components/user/UserNavbar';
+
+import './App.css';
+
+// AuthContext
 export const AuthContext = React.createContext();
 
 const initialState = {
-  isAuthenticated: localStorage.getItem("token") ? true : false, // Cek token saat load
-  user: null, // Bisa diisi data user setelah login
+  isAuthenticated: localStorage.getItem("token") ? true : false,
+  user: JSON.parse(localStorage.getItem("user")) || null,
   token: localStorage.getItem("token") || null,
 };
 
@@ -20,11 +39,12 @@ const reducer = (state, action) => {
   switch (action.type) {
     case "LOGIN_SUCCESS":
       localStorage.setItem("token", action.payload.token);
+      localStorage.setItem("user", JSON.stringify(action.payload.user));
       return {
         ...state,
         isAuthenticated: true,
         token: action.payload.token,
-        // user: action.payload.user // Jika API login mengembalikan data user
+        user: action.payload.user,
       };
     case "LOGOUT":
       localStorage.clear();
@@ -39,36 +59,157 @@ const reducer = (state, action) => {
   }
 };
 
-
 function App() {
   const [state, dispatch] = React.useReducer(reducer, initialState);
 
-  // Komponen PrivateRoute untuk melindungi route yang butuh login
-  const PrivateRoute = ({ children }) => {
-    return state.isAuthenticated ? children : <Navigate to="/login" />;
+  // Private Route untuk Admin
+  const AdminRoute = ({ children }) => {
+    if (!state.isAuthenticated) {
+      return <Navigate to="/login" />;
+    }
+    if (state.user?.role !== 'admin') {
+      return <Navigate to="/user/dashboard" />;
+    }
+    return children;
+  };
+
+  // Private Route untuk User PMI
+  const UserRoute = ({ children }) => {
+    if (!state.isAuthenticated) {
+      return <Navigate to="/login" />;
+    }
+    if (state.user?.role === 'admin') {
+      return <Navigate to="/dashboard" />;
+    }
+    return children;
+  };
+
+  // Public Route (tidak boleh akses jika sudah login)
+  const PublicRoute = ({ children }) => {
+    if (state.isAuthenticated) {
+      if (state.user?.role === 'admin') {
+        return <Navigate to="/dashboard" />;
+      }
+      return <Navigate to="/user/dashboard" />;
+    }
+    return children;
   };
 
   return (
     <AuthContext.Provider value={{ state, dispatch }}>
       <Router>
         <div className="app-container">
-          {state.isAuthenticated && <Navbar />} {/* Tampilkan Navbar jika sudah login */}
+          {/* Conditional Navbar */}
+          {state.isAuthenticated && state.user?.role === 'admin' && <Navbar />}
+          {state.isAuthenticated && state.user?.role === 'user' && <UserNavbar />}
+          
           <main className={state.isAuthenticated ? "main-content-with-navbar" : "main-content-full"}>
             <Routes>
-              <Route path="/login" element={!state.isAuthenticated ? <LoginPage /> : <Navigate to="/dashboard" />} />
+              {/* Public Routes */}
+              <Route 
+                path="/" 
+                element={
+                  <PublicRoute>
+                    <LandingPage />
+                  </PublicRoute>
+                } 
+              />
+              <Route 
+                path="/login" 
+                element={
+                  <PublicRoute>
+                    <LoginPage />
+                  </PublicRoute>
+                } 
+              />
+              <Route 
+                path="/register" 
+                element={
+                  <PublicRoute>
+                    <RegisterPage />
+                  </PublicRoute>
+                } 
+              />
+
+              {/* Admin Routes */}
               <Route
                 path="/dashboard"
-                element={<PrivateRoute><DashboardPage /></PrivateRoute>}
+                element={
+                  <AdminRoute>
+                    <DashboardPage />
+                  </AdminRoute>
+                }
               />
               <Route
                 path="/input-pmi"
-                element={<PrivateRoute><InputPmiPage /></PrivateRoute>}
+                element={
+                  <AdminRoute>
+                    <InputPmiPage />
+                  </AdminRoute>
+                }
               />
               <Route
                 path="/data-pmi"
-                element={<PrivateRoute><DataPmiPage /></PrivateRoute>}
+                element={
+                  <AdminRoute>
+                    <DataPmiPage />
+                  </AdminRoute>
+                }
               />
-              <Route path="*" element={<Navigate to={state.isAuthenticated ? "/dashboard" : "/login"} />} />
+
+              {/* User PMI Routes */}
+              <Route
+                path="/user/dashboard"
+                element={
+                  <UserRoute>
+                    <UserDashboard />
+                  </UserRoute>
+                }
+              />
+              <Route
+                path="/user/application/create"
+                element={
+                  <UserRoute>
+                    <ApplicationForm />
+                  </UserRoute>
+                }
+              />
+              <Route
+                path="/user/application/edit"
+                element={
+                  <UserRoute>
+                    <ApplicationEdit />
+                  </UserRoute>
+                }
+              />
+              <Route
+                path="/user/application/status"
+                element={
+                  <UserRoute>
+                    <ApplicationStatus />
+                  </UserRoute>
+                }
+              />
+              <Route
+                path="/user/profile"
+                element={
+                  <UserRoute>
+                    <UserProfile />
+                  </UserRoute>
+                }
+              />
+
+              {/* Default Redirect */}
+              <Route 
+                path="*" 
+                element={
+                  <Navigate to={
+                    state.isAuthenticated 
+                      ? (state.user?.role === 'admin' ? "/dashboard" : "/user/dashboard")
+                      : "/"
+                  } />
+                } 
+              />
             </Routes>
           </main>
         </div>

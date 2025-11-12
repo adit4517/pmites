@@ -1,58 +1,95 @@
+
+// ========================================
+// File: server/routes/userRoutes.js (NEW)
+// ========================================
+
 const express = require('express');
 const router = express.Router();
 const {
-  createPmi,
-  getAllPmi,
-  getPmiById,
-  deletePmi,
-  downloadDocument,
-  getStatsJumlahPmi,
-  getStatsAsal,
-  getStatsAsalDesaByKecamatan,
-  getStatsJenisKelamin,
-  getStatsNegaraTujuan,
-  getStatsProfesi,
-  updatePmi
-} = require('../controllers/pmiController');
-// const authMiddleware = require('../middleware/authMiddleware'); // Jika ingin proteksi route
+  getAllUsers,
+  getUserById,
+  updateUser,
+  deleteUser,
+  toggleUserActive,
+  verifyUser,
+  getUserStats
+} = require('../controllers/userController');
 
-// @route   POST api/pmi
-// @desc    Create a PMI record
-// @access  Private (contoh, jika sudah ada authMiddleware)
-router.post('/', /*authMiddleware,*/ createPmi); // authMiddleware di-komen dulu
+const authMiddleware = require('../middleware/authMiddleware');
+const authorizeRoles = require('../middleware/roleMiddleware');
 
-// @route   GET api/pmi
-// @desc    Get all PMI records
-// @access  Private
-router.get('/', /*authMiddleware,*/ getAllPmi);
+// All routes are admin only
 
-// @route   GET api/pmi/:id
-// @desc    Get single PMI record
-// @access  Private
-router.get('/:id', /*authMiddleware,*/ getPmiById);
+// @route   GET /api/users/stats
+// @desc    Get user statistics
+// @access  Private (Admin only)
+router.get('/stats', authMiddleware, authorizeRoles('admin'), getUserStats);
 
-// @route   DELETE api/pmi/:id
-// @desc    Delete a PMI record
-// @access  Private
-router.delete('/:id', /*authMiddleware,*/ deletePmi);
+// @route   GET /api/users
+// @desc    Get all users
+// @access  Private (Admin only)
+router.get('/', authMiddleware, authorizeRoles('admin'), getAllUsers);
 
-// @route   GET api/pmi/download/:pmiId/:docField
-// @desc    Download a specific document for a PMI
-// @access  Private (or Public depending on requirements)
-router.get('/download/:pmiId/:docField', /*authMiddleware,*/ downloadDocument);
+// @route   GET /api/users/:id
+// @desc    Get user by ID
+// @access  Private (Admin only)
+router.get('/:id', authMiddleware, authorizeRoles('admin'), getUserById);
 
+// @route   PUT /api/users/:id
+// @desc    Update user
+// @access  Private (Admin only)
+router.put('/:id', authMiddleware, authorizeRoles('admin'), updateUser);
 
-// Statistik Routes
-router.get('/stats/jumlah', /*authMiddleware,*/ getStatsJumlahPmi);
-router.get('/stats/asal', /*authMiddleware,*/ getStatsAsal);
-router.get('/stats/asal/desa/:kecamatan', /*authMiddleware,*/ getStatsAsalDesaByKecamatan);
-router.get('/stats/jenis-kelamin', /*authMiddleware,*/ getStatsJenisKelamin);
-router.get('/stats/negara-tujuan', /*authMiddleware,*/ getStatsNegaraTujuan);
-router.get('/stats/profesi', /*authMiddleware,*/ getStatsProfesi);
+// @route   DELETE /api/users/:id
+// @desc    Delete user
+// @access  Private (Admin only)
+router.delete('/:id', authMiddleware, authorizeRoles('admin'), deleteUser);
 
-// @route   PUT api/pmi/:id
-// @desc    Update a PMI record
-// @access  Private
-router.put('/:id', /*authMiddleware,*/ updatePmi);
+// @route   PUT /api/users/:id/toggle-active
+// @desc    Toggle user active status
+// @access  Private (Admin only)
+router.put('/:id/toggle-active', authMiddleware, authorizeRoles('admin'), toggleUserActive);
+
+// @route   PUT /api/users/:id/verify
+// @desc    Verify user
+// @access  Private (Admin only)
+router.put('/:id/verify', authMiddleware, authorizeRoles('admin'), verifyUser);
 
 module.exports = router;
+
+
+// ========================================
+// IMPORTANT: Update server/server.js
+// ========================================
+
+/*
+const express = require('express');
+const dotenv = require('dotenv');
+const connectDB = require('./config/db');
+const cors = require('cors');
+const path = require('path');
+
+dotenv.config();
+connectDB();
+const app = express();
+
+app.use(cors());
+app.use(express.json());
+
+// Sajikan folder 'uploads' secara statis
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Define Routes
+app.use('/api/auth', require('./routes/authRoutes'));
+app.use('/api/pmi', require('./routes/pmiRoutes'));
+app.use('/api/users', require('./routes/userRoutes')); // <-- ADD THIS LINE
+
+app.use('/api/status', (req, res) => {
+  res.status(200).json({ status: 'success', message: 'Backend PMI Rembang berjalan!' });
+});
+
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+  console.log(`✅ [SERVER BERHASIL BERJALAN] di Port: ${PORT}`);
+});
+*/
