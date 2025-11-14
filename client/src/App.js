@@ -18,7 +18,7 @@ import UserDashboard from './pages/user/UserDashboard';
 import ApplicationForm from './pages/user/ApplicationForm';
 import ApplicationEdit from './pages/user/ApplicationEdit';
 import ApplicationStatus from './pages/user/ApplicationStatus';
-import UserProfile from './pages/user/UserProfile';
+import UserProfile from './pages/user/UserProfilePage';
 
 // Components
 import Navbar from './components/common/Navbar';

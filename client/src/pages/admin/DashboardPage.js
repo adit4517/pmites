@@ -2,10 +2,10 @@ import React, { useState, useEffect, useContext, useCallback } from 'react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import axios from 'axios'; // Impor axios di baris terpisah
-import { AuthContext } from '../App';
-import PieChart from '../components/common/PieChart';
-import BarChart from '../components/common/BarChart';
-import AsalTable from '../components/dashboard/AsalTable';
+import { AuthContext } from '../../App';
+import PieChart from '../../components/common/PieChart';
+import BarChart from '../../components/common/BarChart';
+import AsalTable from '../../components/dashboard/AsalTable';
 
 // Komponen AsalTablePopup - sebaiknya di file terpisah, tapi untuk sekarang kita biarkan di sini
 const AsalTablePopup = ({ kecamatan, data, onClose }) => {

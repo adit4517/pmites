@@ -1,7 +1,7 @@
 import React, { useState, useContext } from 'react';
 import axios from 'axios';
-import { AuthContext } from '../App';
-import PmiForm from '../components/pmi/PmiForm'; // Impor PmiForm
+import { AuthContext } from '../../App';
+import PmiForm from '../../components/pmi/PmiForm'; // Impor PmiForm
 
 // Komponen Notifikasi, ini sudah benar.
 const Notification = ({ message, type, onDismiss }) => {
