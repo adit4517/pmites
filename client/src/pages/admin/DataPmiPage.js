@@ -1,545 +1,450 @@
-// import React, { useState, useEffect, useContext, useCallback } from 'react';
-// import axios from 'axios';
-// import { AuthContext } from '../App';
-// import PmiTable from '../components/pmi/PmiTable';
-// import PmiForm from '../components/pmi/PmiForm';
-
-// // Komponen DocumentLinks sebaiknya di luar atau di file sendiri.
-// // Kita perlu meneruskan handleDownload sebagai prop jika dipisah.
-// const DocumentLinks = ({ documents, pmiId, onDownload }) => {
-//     if (!documents || Object.keys(documents).length === 0) {
-//         return <small>Tidak ada dokumen.</small>;
-//     }
-//     const validDocuments = Object.entries(documents).filter(([key, path]) => path);
-
-//     if (validDocuments.length === 0) {
-//         return <small>Tidak ada dokumen terlampir.</small>;
-//     }
-
-//     return (
-//         <ul>
-//                         {validDocuments.map(([key, pathValue]) => { // Ganti nama 'path' menjadi 'pathValue' agar lebih jelas
-//                 const fileName = pathValue.split('\\').pop().split('/').pop();
-//                 // Pastikan path menggunakan forward slashes untuk URL
-//                 const documentUrlPath = pathValue.replace(/\\/g, '/');
-//                 // Pastikan URL selalu mengandung 'uploads/' prefix
-//                 const urlToOpen = documentUrlPath.startsWith('uploads/')
-//                     ? `http://localhost:5000/${documentUrlPath}`
-//                     : `http://localhost:5000/uploads/${fileName}`;
-//                 return (
-//                      <li key={key}>
-//                          {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}:
-//                          {' '}
-//                         {/* PERBAIKAN DI SINI */}
-//                         <button className="view-btn" onClick={() => window.open(`http://localhost:5000/${documentUrlPath}`, '_blank')}>Lihat</button>
-//                         <button className="view-btn" onClick={() => window.open(urlToOpen, '_blank')}>Lihat</button>
-//                          {' '}
-//                          <button className="download-btn" onClick={() => onDownload(pmiId, key, fileName)}>Download</button>
-//                      </li>
-//                 );
-//             })}
-
-//         </ul>
-//     );
-// };
-
-
-// const DataPmiPage = () => {
-//     const { state } = useContext(AuthContext);
-//     const [pmiData, setPmiData] = useState([]);
-//     const [loading, setLoading] = useState(true);
-//     const [error, setError] = useState('');
-    
-//     // State untuk Modal Detail (jika masih ingin digunakan terpisah)
-//     const [showDetailModal, setShowDetailModal] = useState(false);
-//     const [selectedPmi, setSelectedPmi] = useState(null);
-
-//     // State untuk Search dan Modal Edit
-//     const [searchTerm, setSearchTerm] = useState('');
-//     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-//     const [editingPmi, setEditingPmi] = useState(null);
-//     const [editFormData, setEditFormData] = useState({});
-//     const [editFileFields, setEditFileFields] = useState({});
-//     const [docsToDelete, setDocsToDelete] = useState([]);
-
-//     const fetchPmiData = useCallback(async () => {
-//         setLoading(true);
-//         setError('');
-//         try {
-//             const config = {
-//                 headers: { 'Authorization': `Bearer ${state.token}` },
-//                 params: { search: searchTerm }
-//             };
-//             const res = await axios.get('http://localhost:5000/api/pmi', config);
-
-//             // TAMBAHKAN BARIS INI UNTUK DEBUGGING
-//             console.log('[Frontend] Menerima data dari API:', res.data);
-
-//             setPmiData(res.data);
-//         } catch (err) {
-//             console.error("Error fetching PMI data:", err);
-//             setError('Gagal memuat data PMI.');
-//         } finally {
-//             setLoading(false);
-//         }
-//     }, [state.token, searchTerm]);
-
-//     useEffect(() => {
-//         const delayDebounceFn = setTimeout(() => {
-//             fetchPmiData();
-//         }, 500);
-//         return () => clearTimeout(delayDebounceFn);
-//     }, [fetchPmiData]);
-
-//     const handleView = (pmi) => {
-//         setSelectedPmi(pmi);
-//         setShowDetailModal(true);
-//     };
-    
-//     // Pindahkan fungsi handleDownload ke scope utama agar bisa diakses oleh DocumentLinks
-//     const handleDownload = (pmiId, docField, fileName) => {
-//         const downloadUrl = `http://localhost:5000/api/pmi/download/${pmiId}/${docField}`;
-//         window.open(downloadUrl, '_blank');
-//     };
-
-//     const handleEditClick = (pmi) => {
-//         setEditingPmi(pmi);
-//         setEditFormData({
-//             nama: pmi.nama,
-//             asalKecamatan: pmi.asal.kecamatan,
-//             asalDesa: pmi.asal.desa,
-//             jenisKelamin: pmi.jenisKelamin,
-//             negaraTujuan: pmi.negaraTujuan,
-//             profesi: pmi.profesi,
-//             waktuBerangkat: new Date(pmi.waktuBerangkat).toISOString().split('T')[0],
-//         });
-//         setEditFileFields({});
-//         setDocsToDelete([]);
-//         setIsEditModalOpen(true);
-//     };
-
-//     const handleEditFormChange = (e) => {
-//         const { name, value } = e.target;
-//         setEditFormData(prev => {
-//             if (name === 'asalKecamatan') {
-//                 return { ...prev, asalKecamatan: value, asalDesa: '' };
-//             }
-//             return { ...prev, [name]: value };
-//         });
-//     };
-
-//     const handleEditFileChange = (e) => {
-//         setEditFileFields({ ...editFileFields, [e.target.name]: e.target.files[0] });
-//     };
-
-//     const handleToggleDocToDelete = (docField) => {
-//         setDocsToDelete(prev =>
-//             prev.includes(docField) ? prev.filter(d => d !== docField) : [...prev, docField]
-//         );
-//     };
-
-//     const handleUpdateSubmit = async (e) => {
-//         e.preventDefault();
-//         const dataPayload = new FormData();
-//         Object.keys(editFormData).forEach(key => dataPayload.append(key, editFormData[key]));
-//         Object.keys(editFileFields).forEach(key => {
-//             if (editFileFields[key]) dataPayload.append(key, editFileFields[key]);
-//         });
-//         if (docsToDelete.length > 0) {
-//             dataPayload.append('documentsToDelete', JSON.stringify(docsToDelete));
-//         }
-
-//         try {
-//             const config = {
-//                 headers: {
-//                     'Content-Type': 'multipart/form-data',
-//                     'Authorization': `Bearer ${state.token}`
-//                 },
-//             };
-//             await axios.put(`http://localhost:5000/api/pmi/${editingPmi._id}`, dataPayload, config);
-//             alert('Data berhasil diperbarui!');
-//             setIsEditModalOpen(false);
-//             fetchPmiData();
-//         } catch (err) {
-//             console.error("Error updating PMI data:", err);
-//             alert('Gagal memperbarui data.');
-//         }
-//     };
-
-//     const handleDelete = async (id) => {
-//         if (window.confirm('Apakah Anda yakin ingin menghapus data ini?')) {
-//             try {
-//                 const config = { headers: { 'Authorization': `Bearer ${state.token}` } };
-//                 await axios.delete(`http://localhost:5000/api/pmi/${id}`, config);
-//                 fetchPmiData();
-//                 alert('Data PMI berhasil dihapus.');
-//             } catch (err) {
-//                 console.error("Error deleting PMI data:", err);
-//                 alert('Gagal menghapus data PMI.');
-//             }
-//         }
-//     };
-
-//     // TAMBAHKAN BARIS INI UNTUK DEBUGGING
-//     console.log('[Frontend] Nilai state pmiData sebelum render:', pmiData);
-//     // INI ADALAH SATU-SATUNYA RETURN STATEMENT UNTUK KOMPONEN
-//     return (
-//         <div>
-//             <h1>Data PMI</h1>
-            
-//             <div className="search-container" style={{ marginBottom: '20px' }}>
-//                 <input
-//                     type="text"
-//                     placeholder="Cari berdasarkan Nama, ID, Asal, Negara, Profesi..."
-//                     value={searchTerm}
-//                     onChange={(e) => setSearchTerm(e.target.value)}
-//                     style={{ width: '100%', padding: '10px', boxSizing: 'border-box' }}
-//                 />
-//             </div>
-
-//             {/* Logika untuk menampilkan loading, error, atau tabel data */}
-//             {loading ? (
-//                 <p>Memuat data...</p>
-//             ) : error ? (
-//                 <p style={{ color: 'red' }}>{error}</p>
-//             ) : (
-//                 <PmiTable
-//                 pmiData={pmiData}
-//                 onDeleteById={handleDelete}
-//                 onEditById={handleEditClick}
-//                 onViewDetailsById={handleView}
-                
-//                 />
-//             )}
-
-//             {/* Modal untuk Edit Data */}
-//             {isEditModalOpen && editingPmi && (
-//                 <div className="modal">
-//                     <div className="modal-content" style={{maxWidth: '700px', maxHeight: '90vh', overflowY: 'auto'}}>
-//                         <button className="close-btn" onClick={() => setIsEditModalOpen(false)}>&times;</button>
-//                         <h3>Edit Data: {editingPmi.pmiId} - {editingPmi.nama}</h3>
-//                         <PmiForm
-//                             formId="editPmiForm"
-//                             isEditMode={true}
-//                             formData={editFormData}
-//                             fileFields={editFileFields}
-//                             onFormChange={handleEditFormChange}
-//                             onFileChange={handleEditFileChange}
-//                             onSubmit={handleUpdateSubmit}
-//                             onReset={() => setIsEditModalOpen(false)}
-//                         >
-//                             <div className="form-section">
-//                                 <h4>Dokumen Tersimpan</h4>
-//                                 <ul style={{listStyle:'none', padding: 0}}>
-//                                     {Object.entries(editingPmi.dokumen).map(([key, path]) => {
-//                                         if(path) {
-//                                             return (
-//                                                 <li key={key} style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom:'5px'}}>
-//                                                     <span>{key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}</span>
-//                                                     <label style={{color: docsToDelete.includes(key) ? 'red' : 'inherit'}}>
-//                                                         <input type="checkbox" checked={docsToDelete.includes(key)} onChange={() => handleToggleDocToDelete(key)} /> Tandai untuk Hapus
-//                                                     </label>
-//                                                 </li>
-//                                             )
-//                                         }
-//                                         return null;
-//                                     })}
-//                                 </ul>
-//                             </div>
-//                         </PmiForm>
-//                     </div>
-//                 </div>
-//             )}
-
-//             {/* Modal untuk Detail Data */}
-//             {showDetailModal && selectedPmi && (
-//                 <div className="modal">
-//                     <div className="modal-content" style={{maxWidth: '700px', maxHeight: '80vh', overflowY: 'auto'}}>
-//                         <button className="close-btn" onClick={() => setShowDetailModal(false)}>&times;</button>
-//                         <h4>Detail Data PMI: {selectedPmi.nama}</h4>
-//                         <p><strong>ID PMI:</strong> {selectedPmi.pmiId}</p>
-//                         <p><strong>Nama:</strong> {selectedPmi.nama}</p>
-//                         <p><strong>Asal:</strong> {selectedPmi.asal.kecamatan}, {selectedPmi.asal.desa}</p>
-//                         <p><strong>Jenis Kelamin:</strong> {selectedPmi.jenisKelamin}</p>
-//                         <p><strong>Negara Tujuan:</strong> {selectedPmi.negaraTujuan}</p>
-//                         <p><strong>Profesi:</strong> {selectedPmi.profesi}</p>
-//                         <p><strong>Waktu Berangkat:</strong> {new Date(selectedPmi.waktuBerangkat).toLocaleDateString('id-ID')}</p>
-//                         <h5>Dokumen:</h5>
-//                         <DocumentLinks documents={selectedPmi.dokumen} pmiId={selectedPmi._id} onDownload={handleDownload} />
-//                     </div>
-//                 </div>
-//             )}
-//         </div>
-//     );
-// };
-
-// export default DataPmiPage;
+// File: client/src/pages/admin/DataPmiPage.js
 
 import React, { useState, useEffect, useContext, useCallback } from 'react';
 import axios from 'axios';
 import { AuthContext } from '../../App';
-import PmiTable from '../../components/pmi/PmiTable';
-import PmiForm from '../../components/pmi/PmiForm';
-
-// Komponen DocumentLinks sebaiknya di luar atau di file sendiri.
-// Kita perlu meneruskan handleDownload sebagai prop jika dipisah.
-const DocumentLinks = ({ documents, pmiId, onDownload }) => {
-    if (!documents || Object.keys(documents).length === 0) {
-        return <small>Tidak ada dokumen.</small>;
-    }
-    const validDocuments = Object.entries(documents).filter(([key, path]) => path);
-
-    if (validDocuments.length === 0) {
-        return <small>Tidak ada dokumen terlampir.</small>;
-    }
-
-    return (
-        <ul>
-            {validDocuments.map(([key, path]) => {
-                const fileName = path.split('\\').pop().split('/').pop();
-                return (
-                    <li key={key}>
-                        {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}:
-                        {' '}
-                        <button className="view-btn" onClick={() => window.open(`http://localhost:5000/${path}`, '_blank')}>Lihat</button>
-                        {' '}
-                        {/* Panggil fungsi onDownload yang diteruskan dari parent */}
-                        <button className="download-btn" onClick={() => onDownload(pmiId, key, fileName)}>Download</button>
-                    </li>
-                );
-            })}
-        </ul>
-    );
-};
 
 const DataPmiPage = () => {
-    const { state } = useContext(AuthContext);
-    const [pmiData, setPmiData] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
-    
-    // State untuk Modal Detail (jika masih ingin digunakan terpisah)
-    const [showDetailModal, setShowDetailModal] = useState(false);
-    const [selectedPmi, setSelectedPmi] = useState(null);
+  const { state } = useContext(AuthContext);
+  const [pmiData, setPmiData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [selectedPmi, setSelectedPmi] = useState(null);
 
-    // State untuk Search dan Modal Edit
-    const [searchTerm, setSearchTerm] = useState('');
-    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-    const [editingPmi, setEditingPmi] = useState(null);
-    const [editFormData, setEditFormData] = useState({});
-    const [editFileFields, setEditFileFields] = useState({});
-    const [docsToDelete, setDocsToDelete] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [notification, setNotification] = useState({ show: false, type: '', message: '' });
 
-    const fetchPmiData = useCallback(async () => {
-        setLoading(true);
-        setError('');
-        try {
-            const config = {
-                headers: { 'Authorization': `Bearer ${state.token}` },
-                params: { search: searchTerm }
-            };
-            const res = await axios.get('http://localhost:5000/api/pmi', config);
-
-            // TAMBAHKAN BARIS INI UNTUK DEBUGGING
-            console.log('[Frontend] Menerima data dari API:', res.data);
-
-            setPmiData(res.data);
-        } catch (err) {
-            console.error("Error fetching PMI data:", err);
-            setError('Gagal memuat data PMI.');
-        } finally {
-            setLoading(false);
+  const fetchPmiData = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const config = {
+        headers: { 'Authorization': `Bearer ${state.token}` },
+        params: { 
+          search: searchTerm,
+          status: statusFilter
         }
-    }, [state.token, searchTerm]);
+      };
+      const res = await axios.get('http://localhost:5000/api/pmi', config);
+      setPmiData(res.data);
+    } catch (err) {
+      console.error("Error fetching PMI data:", err);
+      setError('Gagal memuat data PMI.');
+    } finally {
+      setLoading(false);
+    }
+  }, [state.token, searchTerm, statusFilter]);
 
-    useEffect(() => {
-        const delayDebounceFn = setTimeout(() => {
-            fetchPmiData();
-        }, 500);
-        return () => clearTimeout(delayDebounceFn);
-    }, [fetchPmiData]);
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      fetchPmiData();
+    }, 500);
+    return () => clearTimeout(delayDebounceFn);
+  }, [fetchPmiData]);
 
-    const handleView = (pmi) => {
-        setSelectedPmi(pmi);
-        setShowDetailModal(true);
+  const showNotification = (message, type) => {
+    setNotification({ show: true, type, message });
+    setTimeout(() => setNotification({ show: false, type: '', message: '' }), 3000);
+  };
+
+  const handleView = (pmi) => {
+    setSelectedPmi(pmi);
+    setShowDetailModal(true);
+  };
+  
+  const handleDownload = (pmiId, docField, fileName) => {
+    const downloadUrl = `http://localhost:5000/api/pmi/download/${pmiId}/${docField}`;
+    window.open(downloadUrl, '_blank');
+  };
+
+  const handleViewDocument = (path) => {
+    window.open(`http://localhost:5000/${path}`, '_blank');
+  };
+
+  const handleDelete = async (id) => {
+    if (window.confirm('Apakah Anda yakin ingin menghapus data ini? Data yang dihapus tidak dapat dikembalikan.')) {
+      try {
+        const config = { headers: { 'Authorization': `Bearer ${state.token}` } };
+        await axios.delete(`http://localhost:5000/api/pmi/${id}`, config);
+        fetchPmiData();
+        showNotification('Data PMI berhasil dihapus.', 'success');
+      } catch (err) {
+        console.error("Error deleting PMI data:", err);
+        showNotification('Gagal menghapus data PMI.', 'error');
+      }
+    }
+  };
+
+  const getStatusBadgeClass = (status) => {
+    const colors = {
+      'draft': 'background: #95a5a6; color: white;',
+      'submitted': 'background: #3498db; color: white;',
+      'under_review': 'background: #f39c12; color: white;',
+      'need_revision': 'background: #e67e22; color: white;',
+      'approved': 'background: #2ecc71; color: white;',
+      'rejected': 'background: #e74c3c; color: white;',
+      'processing': 'background: #9b59b6; color: white;',
+      'departed': 'background: #1abc9c; color: white;',
+      'returned': 'background: #34495e; color: white;'
     };
-    
-    // Pindahkan fungsi handleDownload ke scope utama agar bisa diakses oleh DocumentLinks
-    const handleDownload = (pmiId, docField, fileName) => {
-        const downloadUrl = `http://localhost:5000/api/pmi/download/${pmiId}/${docField}`;
-        window.open(downloadUrl, '_blank');
-    };
+    return colors[status] || 'background: #95a5a6; color: white;';
+  };
 
-    const handleEditClick = (pmi) => {
-        setEditingPmi(pmi);
-        setEditFormData({
-            nama: pmi.nama,
-            asalKecamatan: pmi.asal.kecamatan,
-            asalDesa: pmi.asal.desa,
-            jenisKelamin: pmi.jenisKelamin,
-            negaraTujuan: pmi.negaraTujuan,
-            profesi: pmi.profesi,
-            waktuBerangkat: new Date(pmi.waktuBerangkat).toISOString().split('T')[0],
-        });
-        setEditFileFields({});
-        setDocsToDelete([]);
-        setIsEditModalOpen(true);
-    };
+  return (
+    <div>
+      {notification.show && (
+        <div className={`notification ${notification.type}`}>
+          {notification.message}
+          <button onClick={() => setNotification({ show: false, type: '', message: '' })}>
+            &times;
+          </button>
+        </div>
+      )}
 
-    const handleEditFormChange = (e) => {
-        const { name, value } = e.target;
-        setEditFormData(prev => {
-            if (name === 'asalKecamatan') {
-                return { ...prev, asalKecamatan: value, asalDesa: '' };
-            }
-            return { ...prev, [name]: value };
-        });
-    };
+      <div className="dashboard-header">
+        <h1>Data PMI</h1>
+      </div>
+      
+      {/* Filter & Search Section */}
+      <div style={{
+        background: 'white',
+        padding: '20px',
+        borderRadius: '8px',
+        marginBottom: '20px',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+      }}>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+          gap: '15px'
+        }}>
+          <div>
+            <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500', fontSize: '0.9em' }}>
+              Status
+            </label>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '10px',
+                border: '1px solid var(--border-color)',
+                borderRadius: 'var(--border-radius-sm)',
+                fontSize: '0.95em'
+              }}
+            >
+              <option value="">Semua Status</option>
+              <option value="draft">Draft</option>
+              <option value="submitted">Menunggu Review</option>
+              <option value="under_review">Sedang Direview</option>
+              <option value="need_revision">Perlu Revisi</option>
+              <option value="approved">Disetujui</option>
+              <option value="rejected">Ditolak</option>
+              <option value="processing">Dalam Proses</option>
+              <option value="departed">Sudah Berangkat</option>
+              <option value="returned">Sudah Pulang</option>
+            </select>
+          </div>
 
-    const handleEditFileChange = (e) => {
-        setEditFileFields({ ...editFileFields, [e.target.name]: e.target.files[0] });
-    };
+          <div style={{ gridColumn: 'span 2' }}>
+            <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500', fontSize: '0.9em' }}>
+              Pencarian
+            </label>
+            <input
+              type="text"
+              placeholder="Cari berdasarkan Nama, ID, Asal, Negara Tujuan, atau Profesi..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '10px',
+                border: '1px solid var(--border-color)',
+                borderRadius: 'var(--border-radius-sm)',
+                fontSize: '0.95em'
+              }}
+            />
+          </div>
+        </div>
 
-    const handleToggleDocToDelete = (docField) => {
-        setDocsToDelete(prev =>
-            prev.includes(docField) ? prev.filter(d => d !== docField) : [...prev, docField]
-        );
-    };
+        <div style={{ marginTop: '15px', fontSize: '0.9em', color: 'var(--text-secondary)' }}>
+          <strong>Total Data:</strong> {pmiData.length} PMI
+        </div>
+      </div>
 
-    const handleUpdateSubmit = async (e) => {
-        e.preventDefault();
-        const dataPayload = new FormData();
-        Object.keys(editFormData).forEach(key => dataPayload.append(key, editFormData[key]));
-        Object.keys(editFileFields).forEach(key => {
-            if (editFileFields[key]) dataPayload.append(key, editFileFields[key]);
-        });
-        if (docsToDelete.length > 0) {
-            dataPayload.append('documentsToDelete', JSON.stringify(docsToDelete));
-        }
+      {/* Data Display */}
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: '40px' }}>
+          <p>Memuat data...</p>
+        </div>
+      ) : error ? (
+        <div style={{ textAlign: 'center', padding: '40px' }}>
+          <p style={{ color: 'red' }}>{error}</p>
+        </div>
+      ) : pmiData.length === 0 ? (
+        <div style={{ 
+          textAlign: 'center', 
+          padding: '60px 20px',
+          background: 'white',
+          borderRadius: '8px'
+        }}>
+          <div style={{ fontSize: '4em', marginBottom: '20px' }}>📂</div>
+          <h3>Tidak ada data</h3>
+          <p style={{ color: 'var(--text-secondary)' }}>
+            Belum ada data PMI yang cocok dengan filter Anda
+          </p>
+        </div>
+      ) : (
+        <div className="dashboard-grid">
+          {pmiData.map((pmi) => (
+            <div key={pmi._id} className="dashboard-card">
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'flex-start',
+                marginBottom: '15px'
+              }}>
+                <div>
+                  <h3 style={{ margin: '0 0 5px 0', fontSize: '1.1em' }}>{pmi.nama}</h3>
+                  <p style={{ margin: 0, fontSize: '0.85em', color: 'var(--text-secondary)' }}>
+                    ID: {pmi.pmiId}
+                  </p>
+                </div>
+                <div 
+                  style={{
+                    padding: '5px 12px',
+                    borderRadius: '20px',
+                    fontSize: '0.8em',
+                    fontWeight: '600',
+                    whiteSpace: 'nowrap',
+                    ...Object.fromEntries(
+                      getStatusBadgeClass(pmi.status)
+                        .split(';')
+                        .map(style => style.trim().split(':').map(s => s.trim()))
+                    )
+                  }}
+                >
+                  {pmi.statusLabel}
+                </div>
+              </div>
 
-        try {
-            const config = {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                    'Authorization': `Bearer ${state.token}`
-                },
-            };
-            await axios.put(`http://localhost:5000/api/pmi/${editingPmi._id}`, dataPayload, config);
-            alert('Data berhasil diperbarui!');
-            setIsEditModalOpen(false);
-            fetchPmiData();
-        } catch (err) {
-            console.error("Error updating PMI data:", err);
-            alert('Gagal memperbarui data.');
-        }
-    };
+              <div style={{ fontSize: '0.9em', marginBottom: '15px', color: 'var(--text-secondary)' }}>
+                <p style={{ margin: '5px 0' }}>
+                  <strong style={{ color: 'var(--text-primary)' }}>📍 Asal:</strong> {pmi.asal.kecamatan}, {pmi.asal.desa}
+                </p>
+                <p style={{ margin: '5px 0' }}>
+                  <strong style={{ color: 'var(--text-primary)' }}>🌍 Negara:</strong> {pmi.negaraTujuan}
+                </p>
+                <p style={{ margin: '5px 0' }}>
+                  <strong style={{ color: 'var(--text-primary)' }}>💼 Profesi:</strong> {pmi.profesi}
+                </p>
+                <p style={{ margin: '5px 0' }}>
+                  <strong style={{ color: 'var(--text-primary)' }}>👤 Gender:</strong> {pmi.jenisKelamin}
+                </p>
+                <p style={{ margin: '5px 0' }}>
+                  <strong style={{ color: 'var(--text-primary)' }}>📅 Berangkat:</strong> {new Date(pmi.waktuBerangkat).toLocaleDateString('id-ID')}
+                </p>
+              </div>
 
-    const handleDelete = async (id) => {
-        if (window.confirm('Apakah Anda yakin ingin menghapus data ini?')) {
-            try {
-                const config = { headers: { 'Authorization': `Bearer ${state.token}` } };
-                await axios.delete(`http://localhost:5000/api/pmi/${id}`, config);
-                fetchPmiData();
-                alert('Data PMI berhasil dihapus.');
-            } catch (err) {
-                console.error("Error deleting PMI data:", err);
-                alert('Gagal menghapus data PMI.');
-            }
-        }
-    };
+              <div style={{ 
+                display: 'flex', 
+                gap: '8px',
+                paddingTop: '15px',
+                borderTop: '1px solid #eee'
+              }}>
+                <button
+                  className="view-btn"
+                  onClick={() => handleView(pmi)}
+                  style={{ flex: 1 }}
+                >
+                  Detail
+                </button>
+                <button
+                  className="delete-btn"
+                  onClick={() => handleDelete(pmi._id)}
+                  style={{ flex: 1 }}
+                >
+                  Hapus
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
-    // TAMBAHKAN BARIS INI UNTUK DEBUGGING
-    console.log('[Frontend] Nilai state pmiData sebelum render:', pmiData);
-    // INI ADALAH SATU-SATUNYA RETURN STATEMENT UNTUK KOMPONEN
-    return (
-        <div>
-            <h1>Data PMI</h1>
+      {/* Detail Modal */}
+      {showDetailModal && selectedPmi && (
+        <div className="modal">
+          <div className="modal-content" style={{maxWidth: '800px', maxHeight: '90vh', overflowY: 'auto'}}>
+            <button className="close-btn" onClick={() => setShowDetailModal(false)}>&times;</button>
             
-            <div className="search-container" style={{ marginBottom: '20px' }}>
-                <input
-                    type="text"
-                    placeholder="Cari berdasarkan Nama, ID, Asal, Negara, Profesi..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    style={{ width: '100%', padding: '10px', boxSizing: 'border-box' }}
-                />
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '20px'
+            }}>
+              <h3 style={{ margin: 0 }}>Detail Data PMI</h3>
+              <div 
+                style={{
+                  padding: '8px 16px',
+                  borderRadius: '20px',
+                  fontSize: '0.9em',
+                  fontWeight: '600',
+                  ...Object.fromEntries(
+                    getStatusBadgeClass(selectedPmi.status)
+                      .split(';')
+                      .map(style => style.trim().split(':').map(s => s.trim()))
+                  )
+                }}
+              >
+                {selectedPmi.statusLabel}
+              </div>
             </div>
 
-            {/* Logika untuk menampilkan loading, error, atau tabel data */}
-            {loading ? (
-                <p>Memuat data...</p>
-            ) : error ? (
-                <p style={{ color: 'red' }}>{error}</p>
-            ) : (
-                <PmiTable
-                pmiData={pmiData}
-                onDeleteById={handleDelete}
-                onEditById={handleEditClick}
-                onViewDetailsById={handleView}
-                onViewDocument={(path) => window.open(`http://localhost:5000/${path}`, '_blank')}
-                onDownloadDocument={handleDownload} // handleDownload sudah ada di file ini
-                />
-            )}
-
-            {/* Modal untuk Edit Data */}
-            {isEditModalOpen && editingPmi && (
-                <div className="modal">
-                    <div className="modal-content" style={{maxWidth: '700px', maxHeight: '90vh', overflowY: 'auto'}}>
-                        <button className="close-btn" onClick={() => setIsEditModalOpen(false)}>&times;</button>
-                        <h3>Edit Data: {editingPmi.pmiId} - {editingPmi.nama}</h3>
-                        <PmiForm
-                            formId="editPmiForm"
-                            isEditMode={true}
-                            formData={editFormData}
-                            fileFields={editFileFields}
-                            onFormChange={handleEditFormChange}
-                            onFileChange={handleEditFileChange}
-                            onSubmit={handleUpdateSubmit}
-                            onReset={() => setIsEditModalOpen(false)}
-                        >
-                            <div className="form-section">
-                                <h4>Dokumen Tersimpan</h4>
-                                <ul style={{listStyle:'none', padding: 0}}>
-                                    {Object.entries(editingPmi.dokumen).map(([key, path]) => {
-                                        if(path) {
-                                            return (
-                                                <li key={key} style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom:'5px'}}>
-                                                    <span>{key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}</span>
-                                                    <label style={{color: docsToDelete.includes(key) ? 'red' : 'inherit'}}>
-                                                        <input type="checkbox" checked={docsToDelete.includes(key)} onChange={() => handleToggleDocToDelete(key)} /> Tandai untuk Hapus
-                                                    </label>
-                                                </li>
-                                            )
-                                        }
-                                        return null;
-                                    })}
-                                </ul>
-                            </div>
-                        </PmiForm>
-                    </div>
+            <div className="form-section">
+              <h4>Informasi Identitas</h4>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '15px' }}>
+                <div>
+                  <p style={{ margin: '5px 0', fontSize: '0.9em' }}>
+                    <strong>ID PMI:</strong> {selectedPmi.pmiId}
+                  </p>
+                  <p style={{ margin: '5px 0', fontSize: '0.9em' }}>
+                    <strong>Nama:</strong> {selectedPmi.nama}
+                  </p>
+                  <p style={{ margin: '5px 0', fontSize: '0.9em' }}>
+                    <strong>Jenis Kelamin:</strong> {selectedPmi.jenisKelamin}
+                  </p>
                 </div>
-            )}
-
-            {/* Modal untuk Detail Data */}
-            {showDetailModal && selectedPmi && (
-                <div className="modal">
-                    <div className="modal-content" style={{maxWidth: '700px', maxHeight: '80vh', overflowY: 'auto'}}>
-                        <button className="close-btn" onClick={() => setShowDetailModal(false)}>&times;</button>
-                        <h4>Detail Data PMI: {selectedPmi.nama}</h4>
-                        <p><strong>ID PMI:</strong> {selectedPmi.pmiId}</p>
-                        <p><strong>Nama:</strong> {selectedPmi.nama}</p>
-                        <p><strong>Asal:</strong> {selectedPmi.asal.kecamatan}, {selectedPmi.asal.desa}</p>
-                        <p><strong>Jenis Kelamin:</strong> {selectedPmi.jenisKelamin}</p>
-                        <p><strong>Negara Tujuan:</strong> {selectedPmi.negaraTujuan}</p>
-                        <p><strong>Profesi:</strong> {selectedPmi.profesi}</p>
-                        <p><strong>Waktu Berangkat:</strong> {new Date(selectedPmi.waktuBerangkat).toLocaleDateString('id-ID')}</p>
-                        <h5>Dokumen:</h5>
-                        <DocumentLinks documents={selectedPmi.dokumen} pmiId={selectedPmi._id} onDownload={handleDownload} />
-                    </div>
+                <div>
+                  <p style={{ margin: '5px 0', fontSize: '0.9em' }}>
+                    <strong>Asal:</strong> {selectedPmi.asal.kecamatan}, {selectedPmi.asal.desa}
+                  </p>
+                  <p style={{ margin: '5px 0', fontSize: '0.9em' }}>
+                    <strong>Pendidikan:</strong> {selectedPmi.pendidikanTerakhir}
+                  </p>
+                  {selectedPmi.keterampilan && selectedPmi.keterampilan.length > 0 && (
+                    <p style={{ margin: '5px 0', fontSize: '0.9em' }}>
+                      <strong>Keterampilan:</strong> {selectedPmi.keterampilan.join(', ')}
+                    </p>
+                  )}
                 </div>
+              </div>
+            </div>
+
+            <div className="form-section">
+              <h4>Informasi Keberangkatan</h4>
+              <p style={{ margin: '5px 0', fontSize: '0.9em' }}>
+                <strong>Negara Tujuan:</strong> {selectedPmi.negaraTujuan}
+              </p>
+              <p style={{ margin: '5px 0', fontSize: '0.9em' }}>
+                <strong>Profesi:</strong> {selectedPmi.profesi}
+              </p>
+              <p style={{ margin: '5px 0', fontSize: '0.9em' }}>
+                <strong>Rencana Berangkat:</strong> {new Date(selectedPmi.waktuBerangkat).toLocaleDateString('id-ID')}
+              </p>
+              {selectedPmi.pengalamanKerja && (
+                <p style={{ margin: '5px 0', fontSize: '0.9em' }}>
+                  <strong>Pengalaman Kerja:</strong> {selectedPmi.pengalamanKerja}
+                </p>
+              )}
+            </div>
+
+            <div className="form-section">
+              <h4>Dokumen</h4>
+              <div className="table-container">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>Nama Dokumen</th>
+                      <th style={{ textAlign: 'center' }}>Status</th>
+                      <th>Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Object.entries(selectedPmi.dokumen).map(([key, path]) => (
+                      <tr key={key}>
+                        <td>{key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}</td>
+                        <td style={{ textAlign: 'center' }}>
+                          {path ? (
+                            <span style={{ color: 'var(--success-color)', fontWeight: 'bold' }}>✓</span>
+                          ) : (
+                            <span style={{ color: 'var(--text-light)' }}>-</span>
+                          )}
+                        </td>
+                        <td>
+                          {path ? (
+                            <>
+                              <button 
+                                className="view-btn" 
+                                onClick={() => handleViewDocument(path)}
+                                style={{ marginRight: '5px' }}
+                              >
+                                Lihat
+                              </button>
+                              <button 
+                                className="download-btn" 
+                                onClick={() => handleDownload(selectedPmi._id, key, 'document')}
+                              >
+                                Unduh
+                              </button>
+                            </>
+                          ) : (
+                            <span style={{ color: 'var(--text-light)', fontSize: '0.85em' }}>
+                              Tidak ada
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Status History */}
+            {selectedPmi.statusHistory && selectedPmi.statusHistory.length > 0 && (
+              <div className="form-section">
+                <h4>Riwayat Status</h4>
+                <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                  {selectedPmi.statusHistory.slice().reverse().map((history, index) => (
+                    <div 
+                      key={index}
+                      style={{
+                        padding: '10px',
+                        background: '#f8f9fa',
+                        borderRadius: '5px',
+                        marginBottom: '8px',
+                        fontSize: '0.9em'
+                      }}
+                    >
+                      <div style={{ fontWeight: 'bold' }}>
+                        {history.status === 'draft' ? 'Draft' :
+                         history.status === 'submitted' ? 'Disubmit' :
+                         history.status === 'approved' ? 'Disetujui' :
+                         history.status === 'rejected' ? 'Ditolak' :
+                         history.status === 'need_revision' ? 'Perlu Revisi' : history.status}
+                      </div>
+                      <div style={{ fontSize: '0.85em', color: 'var(--text-secondary)' }}>
+                        {new Date(history.changedAt).toLocaleString('id-ID')}
+                      </div>
+                      {history.note && (
+                        <div style={{ marginTop: '5px', fontStyle: 'italic' }}>
+                          "{history.note}"
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
             )}
+          </div>
         </div>
-    );
+      )}
+    </div>
+  );
 };
 
 export default DataPmiPage;

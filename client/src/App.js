@@ -10,7 +10,7 @@ import RegisterPage from './pages/public/RegisterPage';
 
 // Admin Pages
 import DashboardPage from './pages/admin/DashboardPage';
-import InputPmiPage from './pages/admin/InputPmiPage';
+import SubmissionsPage from './pages/admin/SubmissionsPage';
 import DataPmiPage from './pages/admin/DataPmiPage';
 
 // User PMI Pages
@@ -141,10 +141,10 @@ function App() {
                 }
               />
               <Route
-                path="/input-pmi"
+                path="/submissions"
                 element={
                   <AdminRoute>
-                    <InputPmiPage />
+                    <SubmissionsPage />
                   </AdminRoute>
                 }
               />

@@ -706,3 +706,15 @@ button:disabled {
 .notification button:hover {
   opacity: 1;
 }
+
+.main-content-with-navbar {
+  flex-grow: 1;
+  padding: 25px 30px;
+  background-color: var(--bg-main-content);
+  margin-left: 260px; /* Sesuaikan dengan lebar Navbar */
+  transition: margin-left 0.3s ease;
+}
+
+.main-content-with-navbar.minimized {
+  margin-left: 80px;
+}

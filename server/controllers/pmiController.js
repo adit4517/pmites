@@ -30,10 +30,6 @@ const upload = multer({
     }
   }
 }).fields([
-  { name: 'suratPerjanjian', maxCount: 1 },
-  { name: 'rekomendasiPaspor', maxCount: 1 },
-  { name: 'izinPerekrutan', maxCount: 1 },
-  { name: 'tugasPendampingan', maxCount: 1 },
   { name: 'ktpPmi', maxCount: 1 },
   { name: 'kk', maxCount: 1 },
   { name: 'akta', maxCount: 1 },
@@ -61,7 +57,6 @@ exports.createPmiApplication = async (req, res) => {
     }
 
     try {
-      // Cek apakah user sudah punya aplikasi
       const existingApplication = await Pmi.findOne({ user: req.user.id });
       
       if (existingApplication) {
@@ -83,7 +78,6 @@ exports.createPmiApplication = async (req, res) => {
         keterampilan
       } = req.body;
 
-      // Generate PMI ID
       const counterDoc = await Counter.findOneAndUpdate(
         { _id: 'pmiId' },
         { $inc: { seq: 1 } },
@@ -91,7 +85,6 @@ exports.createPmiApplication = async (req, res) => {
       );
       const pmiId = 'PMI' + String(counterDoc.seq).padStart(3, '0');
 
-      // Siapkan dokumen
       const dokumen = {};
       if (req.files) {
         for (const key in req.files) {
@@ -101,7 +94,6 @@ exports.createPmiApplication = async (req, res) => {
         }
       }
 
-      // Parse keterampilan jika dalam bentuk string
       let keterampilanArray = [];
       if (keterampilan) {
         if (typeof keterampilan === 'string') {
@@ -111,7 +103,6 @@ exports.createPmiApplication = async (req, res) => {
         }
       }
 
-      // Buat aplikasi PMI
       const newPmi = new Pmi({
         pmiId,
         user: req.user.id,
@@ -130,7 +121,6 @@ exports.createPmiApplication = async (req, res) => {
 
       const pmi = await newPmi.save();
 
-      // Update user reference
       await User.findByIdAndUpdate(req.user.id, {
         pmiApplication: pmi._id
       });
@@ -195,7 +185,6 @@ exports.updateMyApplication = async (req, res) => {
         });
       }
 
-      // Hanya bisa edit jika status draft atau need_revision
       if (!['draft', 'need_revision'].includes(pmi.status)) {
         return res.status(400).json({ 
           msg: `Aplikasi dengan status '${pmi.statusLabel}' tidak dapat diedit` 
@@ -216,7 +205,6 @@ exports.updateMyApplication = async (req, res) => {
         documentsToDelete
       } = req.body;
 
-      // Update text fields
       if (nama) pmi.nama = nama;
       if (asalKecamatan && asalDesa) pmi.asal = { kecamatan: asalKecamatan, desa: asalDesa };
       if (jenisKelamin) pmi.jenisKelamin = jenisKelamin;
@@ -234,7 +222,6 @@ exports.updateMyApplication = async (req, res) => {
         }
       }
 
-      // Handle file deletion
       if (documentsToDelete) {
         const docsToDeleteArray = JSON.parse(documentsToDelete);
         docsToDeleteArray.forEach(docField => {
@@ -247,7 +234,6 @@ exports.updateMyApplication = async (req, res) => {
         });
       }
 
-      // Handle new files
       if (req.files) {
         for (const key in req.files) {
           if (req.files[key] && req.files[key][0]) {
@@ -261,7 +247,6 @@ exports.updateMyApplication = async (req, res) => {
         }
       }
 
-      // Reset rejection/revision notes jika sedang revisi
       if (pmi.status === 'need_revision') {
         pmi.revisionNotes = null;
       }
@@ -282,7 +267,7 @@ exports.updateMyApplication = async (req, res) => {
   });
 };
 
-// @desc    Submit PMI application (change status to submitted)
+// @desc    Submit PMI application
 // @route   POST /api/pmi/my-application/submit
 // @access  Private (User only)
 exports.submitApplication = async (req, res) => {
@@ -301,7 +286,6 @@ exports.submitApplication = async (req, res) => {
       });
     }
 
-    // Cek kelengkapan dokumen minimal
     const requiredDocs = ['ktpPmi', 'kk', 'akta', 'ijazah', 'pasFoto'];
     const missingDocs = requiredDocs.filter(doc => !pmi.dokumen[doc]);
 
@@ -328,7 +312,48 @@ exports.submitApplication = async (req, res) => {
 
 // ============ ADMIN FUNCTIONS ============
 
-// @desc    Get all PMI applications (Admin)
+// @desc    Get all PMI submissions (Admin)
+// @route   GET /api/pmi/submissions
+// @access  Private (Admin only)
+exports.getAllSubmissions = async (req, res) => {
+  try {
+    const { status, search } = req.query;
+    let query = {};
+
+    // Filter by status (exclude draft)
+    if (status) {
+      query.status = status;
+    } else {
+      query.status = { $ne: 'draft' };
+    }
+
+    if (search && search.trim() !== '') {
+      query.$or = [
+        { pmiId: { $regex: search, $options: 'i' } },
+        { nama: { $regex: search, $options: 'i' } },
+        { 'asal.kecamatan': { $regex: search, $options: 'i' } },
+        { 'asal.desa': { $regex: search, $options: 'i' } }
+      ];
+    }
+
+    const submissions = await Pmi.find(query)
+      .populate('user', 'username email profile')
+      .populate('processedBy', 'username profile.fullName')
+      .sort({ submittedAt: -1, createdAt: -1 });
+
+    res.json({
+      success: true,
+      count: submissions.length,
+      submissions
+    });
+
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+};
+
+// @desc    Get all PMI data (Admin)
 // @route   GET /api/pmi
 // @access  Private (Admin only)
 exports.getAllPmi = async (req, res) => {
@@ -403,15 +428,12 @@ exports.updatePmiStatus = async (req, res) => {
       return res.status(404).json({ msg: 'Data PMI tidak ditemukan' });
     }
 
-    // Update status dengan tracking
     await pmi.updateStatus(status, req.user.id, note || '');
 
-    // Update processed by
     if (!pmi.processedBy) {
       pmi.processedBy = req.user.id;
     }
 
-    // Handle rejection/revision
     if (status === 'rejected' && rejectionReason) {
       pmi.rejectionReason = rejectionReason;
     }
@@ -476,7 +498,6 @@ exports.deletePmi = async (req, res) => {
       return res.status(404).json({ msg: 'Data PMI tidak ditemukan' });
     }
 
-    // Hapus file fisik
     Object.values(pmi.dokumen).forEach(filePath => {
       if (filePath) {
         fs.unlink(path.join(__dirname, '..', filePath), (err) => {
@@ -485,7 +506,6 @@ exports.deletePmi = async (req, res) => {
       }
     });
 
-    // Remove reference from user
     await User.findByIdAndUpdate(pmi.user, {
       pmiApplication: null
     });
@@ -514,7 +534,6 @@ exports.downloadDocument = async (req, res) => {
       return res.status(404).send('PMI not found.');
     }
 
-    // Check authorization
     if (req.user.role !== 'admin' && pmi.user.toString() !== req.user.id) {
       return res.status(403).send('Unauthorized');
     }
@@ -636,7 +655,8 @@ exports.getStatsProfesi = async (req, res) => {
     const profesiData = await Pmi.aggregate([
       { $match: matchStage },
       { $group: { _id: "$profesi", jumlah: { $sum: 1 } } },
-      { $project: { profesi: "$_id", jumlah: 1, _id: 0 } }
+      { $project: { profesi: "$_id", jumlah: 1, _id: 0 } },
+      { $sort: { jumlah: -1 } }
     ]);
     res.json(profesiData);
   } catch (err) {
@@ -652,6 +672,35 @@ exports.getStatsByStatus = async (req, res) => {
     ]);
     res.json(statusData);
   } catch (err) {
+    res.status(500).json({ msg: 'Server error' });
+  }
+};
+
+// @desc    Get PMI statistics by year
+// @route   GET /api/pmi/stats/yearly
+// @access  Private (Admin only)
+exports.getStatsYearly = async (req, res) => {
+  try {
+    const yearlyData = await Pmi.aggregate([
+      {
+        $group: {
+          _id: { $year: "$waktuBerangkat" },
+          jumlah: { $sum: 1 }
+        }
+      },
+      {
+        $project: {
+          tahun: "$_id",
+          jumlah: 1,
+          _id: 0
+        }
+      },
+      { $sort: { tahun: 1 } }
+    ]);
+    
+    res.json(yearlyData);
+  } catch (err) {
+    console.error(err.message);
     res.status(500).json({ msg: 'Server error' });
   }
 };

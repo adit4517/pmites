@@ -1,59 +1,3 @@
-
-
-// const express = require('express');
-// const router = express.Router();
-// const {
-//   getAllUsers,
-//   getUserById,
-//   updateUser,
-//   deleteUser,
-//   toggleUserActive,
-//   verifyUser,
-//   getUserStats
-// } = require('../controllers/userController');
-
-// const authMiddleware = require('../middleware/authMiddleware');
-// const authorizeRoles = require('../middleware/roleMiddleware');
-
-// // All routes are admin only
-
-// // @route   GET /api/users/stats
-// // @desc    Get user statistics
-// // @access  Private (Admin only)
-// router.get('/stats', authMiddleware, authorizeRoles('admin'), getUserStats);
-
-// // @route   GET /api/users
-// // @desc    Get all users
-// // @access  Private (Admin only)
-// router.get('/', authMiddleware, authorizeRoles('admin'), getAllUsers);
-
-// // @route   GET /api/users/:id
-// // @desc    Get user by ID
-// // @access  Private (Admin only)
-// router.get('/:id', authMiddleware, authorizeRoles('admin'), getUserById);
-
-// // @route   PUT /api/users/:id
-// // @desc    Update user
-// // @access  Private (Admin only)
-// router.put('/:id', authMiddleware, authorizeRoles('admin'), updateUser);
-
-// // @route   DELETE /api/users/:id
-// // @desc    Delete user
-// // @access  Private (Admin only)
-// router.delete('/:id', authMiddleware, authorizeRoles('admin'), deleteUser);
-
-// // @route   PUT /api/users/:id/toggle-active
-// // @desc    Toggle user active status
-// // @access  Private (Admin only)
-// router.put('/:id/toggle-active', authMiddleware, authorizeRoles('admin'), toggleUserActive);
-
-// // @route   PUT /api/users/:id/verify
-// // @desc    Verify user
-// // @access  Private (Admin only)
-// router.put('/:id/verify', authMiddleware, authorizeRoles('admin'), verifyUser);
-
-// module.exports = router;
-
 // File: server/routes/pmiRoutes.js
 
 const express = require('express');
@@ -66,6 +10,7 @@ const {
   submitApplication,
   
   // Admin Functions
+  getAllSubmissions,
   getAllPmi,
   getPmiById,
   updatePmiStatus,
@@ -80,7 +25,8 @@ const {
   getStatsJenisKelamin,
   getStatsNegaraTujuan,
   getStatsProfesi,
-  getStatsByStatus
+  getStatsByStatus,
+  getStatsYearly
 } = require('../controllers/pmiController');
 
 const authMiddleware = require('../middleware/authMiddleware');
@@ -114,15 +60,15 @@ router.post('/my-application/submit', authMiddleware, authorizeRoles('user'), su
 // ADMIN ROUTES (Private - Admin only)
 // ============================================
 
+// @route   GET /api/pmi/submissions
+// @desc    Get all PMI submissions for review (exclude draft)
+// @access  Private (Admin only)
+router.get('/submissions', authMiddleware, authorizeRoles('admin'), getAllSubmissions);
+
 // @route   GET /api/pmi
-// @desc    Get all PMI applications with search & filter
+// @desc    Get all PMI data with search & filter
 // @access  Private (Admin only)
 router.get('/', authMiddleware, authorizeRoles('admin'), getAllPmi);
-
-// @route   POST /api/pmi (for manual input by admin)
-// @desc    Create PMI data manually by admin
-// @access  Private (Admin only)
-router.post('/', authMiddleware, authorizeRoles('admin'), createPmiApplication);
 
 // @route   GET /api/pmi/:id
 // @desc    Get PMI by ID
@@ -196,5 +142,10 @@ router.get('/stats/profesi', authMiddleware, authorizeRoles('admin'), getStatsPr
 // @desc    Get PMI statistics by status
 // @access  Private (Admin only)
 router.get('/stats/status', authMiddleware, authorizeRoles('admin'), getStatsByStatus);
+
+// @route   GET /api/pmi/stats/yearly
+// @desc    Get PMI statistics by year
+// @access  Private (Admin only)
+router.get('/stats/yearly', authMiddleware, authorizeRoles('admin'), getStatsYearly);
 
 module.exports = router;
