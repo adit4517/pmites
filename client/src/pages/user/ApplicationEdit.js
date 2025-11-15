@@ -4,6 +4,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../App';
 import { rembangData } from '../../data/rembangData';
+import { countriesData, profesiData } from '../../data/countriesData';
 import axios from 'axios';
 
 const ApplicationEdit = () => {
@@ -16,6 +17,7 @@ const ApplicationEdit = () => {
     asalDesa: '',
     jenisKelamin: 'Laki-laki',
     negaraTujuan: '',
+    benua: '',
     profesi: '',
     waktuBerangkat: '',
     pendidikanTerakhir: 'SMA/SMK',
@@ -31,45 +33,54 @@ const ApplicationEdit = () => {
   const [notification, setNotification] = useState({ show: false, type: '', message: '' });
 
   useEffect(() => {
-    fetchApplication();
-  }, []);
+    const fetchApplication = async () => {
+      try {
+        const config = {
+          headers: { 'Authorization': `Bearer ${state.token}` }
+        };
+        const res = await axios.get('http://localhost:5000/api/pmi/my-application', config);
+        const app = res.data.pmi;
 
-  const fetchApplication = async () => {
-    try {
-      const config = {
-        headers: { 'Authorization': `Bearer ${state.token}` }
-      };
-      const res = await axios.get('http://localhost:5000/api/pmi/my-application', config);
-      const app = res.data.pmi;
+        // Check if can edit
+        if (!['draft', 'need_revision'].includes(app.status)) {
+          alert('Aplikasi tidak dapat diedit pada status saat ini');
+          navigate('/user/application/status');
+          return;
+        }
 
-      // Check if can edit
-      if (!['draft', 'need_revision'].includes(app.status)) {
-        alert('Aplikasi tidak dapat diedit pada status saat ini');
-        navigate('/user/application/status');
-        return;
+        // Cari benua dari negara tujuan
+        let foundBenua = '';
+        Object.keys(countriesData).forEach(benua => {
+          if (countriesData[benua].includes(app.negaraTujuan)) {
+            foundBenua = benua;
+          }
+        });
+
+        setFormData({
+          nama: app.nama,
+          asalKecamatan: app.asal.kecamatan,
+          asalDesa: app.asal.desa,
+          jenisKelamin: app.jenisKelamin,
+          negaraTujuan: app.negaraTujuan,
+          benua: foundBenua,
+          profesi: app.profesi,
+          waktuBerangkat: new Date(app.waktuBerangkat).toISOString().split('T')[0],
+          pendidikanTerakhir: app.pendidikanTerakhir,
+          pengalamanKerja: app.pengalamanKerja || '',
+          keterampilan: app.keterampilan?.join(', ') || ''
+        });
+
+        setExistingDocs(app.dokumen);
+      } catch (err) {
+        console.error('Error fetching application:', err);
+        navigate('/user/dashboard');
+      } finally {
+        setLoading(false);
       }
+    };
 
-      setFormData({
-        nama: app.nama,
-        asalKecamatan: app.asal.kecamatan,
-        asalDesa: app.asal.desa,
-        jenisKelamin: app.jenisKelamin,
-        negaraTujuan: app.negaraTujuan,
-        profesi: app.profesi,
-        waktuBerangkat: new Date(app.waktuBerangkat).toISOString().split('T')[0],
-        pendidikanTerakhir: app.pendidikanTerakhir,
-        pengalamanKerja: app.pengalamanKerja || '',
-        keterampilan: app.keterampilan?.join(', ') || ''
-      });
-
-      setExistingDocs(app.dokumen);
-    } catch (err) {
-      console.error('Error fetching application:', err);
-      navigate('/user/dashboard');
-    } finally {
-      setLoading(false);
-    }
-  };
+    fetchApplication();
+  }, [state.token, navigate]);
 
   const handleFormChange = (e) => {
     const { name, value } = e.target;
@@ -77,12 +88,24 @@ const ApplicationEdit = () => {
       if (name === 'asalKecamatan') {
         return { ...prev, asalKecamatan: value, asalDesa: '' };
       }
+      if (name === 'benua') {
+        return { ...prev, benua: value, negaraTujuan: '' };
+      }
       return { ...prev, [name]: value };
     });
   };
 
   const handleFileChange = (e) => {
-    setFileFields({ ...fileFields, [e.target.name]: e.target.files[0] });
+    const file = e.target.files[0];
+    const maxSize = 5 * 1024 * 1024; // 5MB
+
+    if (file && file.size > maxSize) {
+      alert('Ukuran file maksimal 5MB');
+      e.target.value = '';
+      return;
+    }
+
+    setFileFields({ ...fileFields, [e.target.name]: file });
   };
 
   const handleToggleDocToDelete = (docField) => {
@@ -99,7 +122,9 @@ const ApplicationEdit = () => {
       const dataPayload = new FormData();
       
       Object.keys(formData).forEach(key => {
-        dataPayload.append(key, formData[key]);
+        if (key !== 'benua') { // Jangan kirim benua
+          dataPayload.append(key, formData[key]);
+        }
       });
       
       Object.keys(fileFields).forEach(key => {
@@ -252,27 +277,52 @@ const ApplicationEdit = () => {
           <h4>Data Keberangkatan</h4>
           
           <div className="form-group">
+            <label htmlFor="benua">Benua Tujuan</label>
+            <select
+              name="benua"
+              id="benua"
+              value={formData.benua}
+              onChange={handleFormChange}
+              required
+            >
+              <option value="">-- Pilih Benua --</option>
+              {Object.keys(countriesData).map(benua => (
+                <option key={benua} value={benua}>{benua}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="form-group">
             <label htmlFor="negaraTujuan">Negara Tujuan</label>
-            <input 
-              type="text" 
-              name="negaraTujuan" 
-              id="negaraTujuan" 
-              value={formData.negaraTujuan} 
-              onChange={handleFormChange} 
-              required 
-            />
+            <select
+              name="negaraTujuan"
+              id="negaraTujuan"
+              value={formData.negaraTujuan}
+              onChange={handleFormChange}
+              required
+              disabled={!formData.benua}
+            >
+              <option value="">-- Pilih Negara --</option>
+              {formData.benua && countriesData[formData.benua].map(negara => (
+                <option key={negara} value={negara}>{negara}</option>
+              ))}
+            </select>
           </div>
 
           <div className="form-group">
             <label htmlFor="profesi">Profesi / Pekerjaan</label>
-            <input 
-              type="text" 
-              name="profesi" 
-              id="profesi" 
-              value={formData.profesi} 
-              onChange={handleFormChange} 
-              required 
-            />
+            <select
+              name="profesi"
+              id="profesi"
+              value={formData.profesi}
+              onChange={handleFormChange}
+              required
+            >
+              <option value="">-- Pilih Profesi --</option>
+              {profesiData.map(profesi => (
+                <option key={profesi} value={profesi}>{profesi}</option>
+              ))}
+            </select>
           </div>
 
           <div className="form-group">

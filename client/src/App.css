@@ -718,3 +718,291 @@ button:disabled {
 .main-content-with-navbar.minimized {
   margin-left: 80px;
 }
+
+.main-content-with-navbar {
+  flex-grow: 1;
+  padding: 25px 30px;
+  background-color: var(--bg-main-content);
+  margin-left: 260px; /* Sesuaikan dengan lebar Navbar */
+  transition: margin-left 0.3s ease;
+}
+
+.main-content-with-navbar.minimized {
+  margin-left: 80px;
+}
+
+/* ========================= */
+/* === RESPONSIVE DESIGN === */
+/* ========================= */
+
+/* Tablet & Mobile */
+@media (max-width: 992px) {
+  .dashboard-grid {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+  }
+
+  .profesi-card {
+    grid-column: span 1;
+  }
+
+  .main-content-with-navbar {
+    margin-left: 0;
+    padding: 20px 15px;
+  }
+
+  .navbar {
+    width: 100%;
+    height: auto;
+    position: fixed;
+    bottom: 0;
+    top: auto;
+    left: 0;
+    right: 0;
+    padding: 10px;
+    flex-direction: row;
+    z-index: 1000;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+  }
+
+  .navbar-header {
+    display: none;
+  }
+
+  .navbar-links {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-around;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  .navbar-links li {
+    flex: 1;
+  }
+
+  .navbar-links li a {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 8px 5px;
+    font-size: 0.75em;
+    text-align: center;
+  }
+
+  .navbar-logout {
+    display: flex;
+    align-items: center;
+    margin: 0;
+  }
+
+  .navbar-logout button {
+    padding: 8px 12px;
+    font-size: 0.85em;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .dashboard-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+
+  .dashboard-header h1 {
+    font-size: 1.5em;
+  }
+
+  .filter-and-print-container {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .filter-container {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filter-container input[type="date"] {
+    width: 100%;
+  }
+
+  .table-container {
+    overflow-x: auto;
+    -ms-overflow-style: -ms-autohiding-scrollbar;
+    touch-action: pan-x; /* allow horizontal touch scrolling on touch devices */
+    overscroll-behavior-x: contain; /* prevent page overscroll when scrolling the table */
+  }
+
+  .data-table {
+    font-size: 0.85em;
+  }
+
+  .data-table th,
+  .data-table td {
+    padding: 8px;
+  }
+
+  .modal-content {
+    width: 95%;
+    max-width: 95%;
+    padding: 20px 15px;
+    margin: 10px;
+  }
+
+  .pmi-form .form-group {
+    margin-bottom: 15px;
+  }
+
+  .form-buttons {
+    flex-direction: column;
+  }
+
+  .form-buttons button {
+    width: 100%;
+    margin-bottom: 10px;
+  }
+}
+
+/* Mobile Only */
+@media (max-width: 576px) {
+  html {
+    font-size: 14px;
+  }
+
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+
+  .dashboard-card {
+    padding: 15px;
+  }
+
+  .dashboard-card h3 {
+    font-size: 1.1em;
+  }
+
+  .login-box {
+    padding: 30px 20px;
+  }
+
+  .login-box h1 {
+    font-size: 1.3em;
+  }
+
+  .chart-container {
+    height: 250px;
+  }
+
+  .notification {
+    width: calc(100% - 40px);
+    left: 20px;
+    right: 20px;
+    min-width: auto;
+  }
+
+  .data-table .actions {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .data-table .actions button {
+    width: 100%;
+    margin-bottom: 5px;
+  }
+
+  .navbar-links li a {
+    font-size: 0.7em;
+    padding: 5px 3px;
+  }
+
+  .main-content-with-navbar {
+    padding: 15px 10px 70px 10px; /* Extra bottom padding for bottom navbar */
+  }
+
+  /* Form responsiveness */
+  .pmi-form input[type="text"],
+  .pmi-form input[type="date"],
+  .pmi-form input[type="file"],
+  .pmi-form select,
+  .pmi-form textarea {
+    font-size: 16px; /* Prevent zoom on iOS */
+  }
+
+  .radio-group {
+    flex-direction: column;
+  }
+
+  .radio-group label {
+    margin-bottom: 10px;
+  }
+}
+
+/* Landscape mode for mobile */
+@media (max-width: 992px) and (orientation: landscape) {
+  .navbar {
+    height: 60px;
+  }
+
+  .main-content-with-navbar {
+    padding-bottom: 80px;
+  }
+}
+
+/* Print styles */
+@media print {
+  .navbar,
+  .filter-container,
+  .print-btn,
+  .form-buttons,
+  .notification {
+    display: none !important;
+  }
+
+  .main-content-with-navbar {
+    margin-left: 0;
+    padding: 0;
+  }
+
+  .dashboard-card {
+    page-break-inside: avoid;
+  }
+}
+
+/* Additional input error styling */
+.pmi-form input.error,
+.pmi-form select.error,
+.pmi-form textarea.error {
+  border-color: var(--error-color);
+  background-color: rgba(231, 76, 60, 0.05);
+}
+
+.pmi-form input.error:focus,
+.pmi-form select.error:focus,
+.pmi-form textarea.error:focus {
+  border-color: var(--error-color);
+  box-shadow: 0 0 0 2px rgba(231, 76, 60, 0.2);
+}
+
+/* Password visibility toggle button */
+.password-toggle-btn {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 5px;
+  font-size: 18px;
+  color: var(--text-secondary);
+  transition: color 0.3s;
+}
+
+.password-toggle-btn:hover {
+  color: var(--primary-color);
+}

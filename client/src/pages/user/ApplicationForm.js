@@ -4,6 +4,7 @@ import React, { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../App';
 import { rembangData } from '../../data/rembangData';
+import { countriesData, profesiData } from '../../data/countriesData';
 import axios from 'axios';
 
 const ApplicationForm = () => {
@@ -16,6 +17,7 @@ const ApplicationForm = () => {
     asalDesa: '',
     jenisKelamin: 'Laki-laki',
     negaraTujuan: '',
+    benua: '',
     profesi: '',
     waktuBerangkat: '',
     pendidikanTerakhir: 'SMA/SMK',
@@ -38,6 +40,8 @@ const ApplicationForm = () => {
     dokumenLainnya: null
   });
 
+  const [errors, setErrors] = useState({});
+  const [touched, setTouched] = useState({});
   const [loading, setLoading] = useState(false);
   const [notification, setNotification] = useState({ show: false, type: '', message: '' });
 
@@ -62,16 +66,88 @@ const ApplicationForm = () => {
       if (name === 'asalKecamatan') {
         return { ...prev, asalKecamatan: value, asalDesa: '' };
       }
+      if (name === 'benua') {
+        return { ...prev, benua: value, negaraTujuan: '' };
+      }
       return { ...prev, [name]: value };
     });
+
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
+    }
+  };
+
+  const handleBlur = (e) => {
+    const { name } = e.target;
+    setTouched(prev => ({ ...prev, [name]: true }));
   };
 
   const handleFileChange = (e) => {
-    setFileFields({ ...fileFields, [e.target.name]: e.target.files[0] });
+    const file = e.target.files[0];
+    const maxSize = 5 * 1024 * 1024; // 5MB
+
+    if (file && file.size > maxSize) {
+      setErrors(prev => ({
+        ...prev,
+        [e.target.name]: 'Ukuran file maksimal 5MB'
+      }));
+      e.target.value = '';
+      return;
+    }
+
+    setFileFields({ ...fileFields, [e.target.name]: file });
+    if (errors[e.target.name]) {
+      setErrors(prev => ({ ...prev, [e.target.name]: '' }));
+    }
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+
+    if (!formData.nama.trim()) newErrors.nama = 'Nama harus diisi';
+    if (!formData.asalKecamatan) newErrors.asalKecamatan = 'Kecamatan harus dipilih';
+    if (!formData.asalDesa) newErrors.asalDesa = 'Desa harus dipilih';
+    if (!formData.benua) newErrors.benua = 'Benua harus dipilih';
+    if (!formData.negaraTujuan) newErrors.negaraTujuan = 'Negara tujuan harus dipilih';
+    if (!formData.profesi) newErrors.profesi = 'Profesi harus dipilih';
+    if (!formData.waktuBerangkat) newErrors.waktuBerangkat = 'Tanggal berangkat harus diisi';
+
+    // Validasi dokumen wajib
+    documentFields.forEach(field => {
+      if (field.required && !fileFields[field.name]) {
+        newErrors[field.name] = `${field.label} harus diupload`;
+      }
+    });
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Mark all fields as touched
+    const allTouched = {};
+    Object.keys(formData).forEach(key => {
+      allTouched[key] = true;
+    });
+    documentFields.forEach(field => {
+      if (field.required) {
+        allTouched[field.name] = true;
+      }
+    });
+    setTouched(allTouched);
+
+    if (!validateForm()) {
+      setNotification({
+        show: true,
+        type: 'error',
+        message: 'Mohon lengkapi semua field yang wajib diisi'
+      });
+      setTimeout(() => setNotification({ show: false, type: '', message: '' }), 3000);
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -79,7 +155,9 @@ const ApplicationForm = () => {
       
       // Append form data
       Object.keys(formData).forEach(key => {
-        dataPayload.append(key, formData[key]);
+        if (key !== 'benua') { // Jangan kirim benua ke backend
+          dataPayload.append(key, formData[key]);
+        }
       });
       
       // Append files
@@ -132,6 +210,7 @@ const ApplicationForm = () => {
         asalDesa: '',
         jenisKelamin: 'Laki-laki',
         negaraTujuan: '',
+        benua: '',
         profesi: '',
         waktuBerangkat: '',
         pendidikanTerakhir: 'SMA/SMK',
@@ -152,6 +231,8 @@ const ApplicationForm = () => {
         sertifikatKeterampilan: null,
         dokumenLainnya: null
       });
+      setErrors({});
+      setTouched({});
       document.getElementById('applicationForm').reset();
     }
   };
@@ -172,7 +253,7 @@ const ApplicationForm = () => {
         Lengkapi formulir di bawah ini untuk membuat aplikasi menjadi Pekerja Migran Indonesia.
         <br />
         <small>
-          <span style={{ color: 'red' }}>*</span> Dokumen yang wajib diupload
+          <span style={{ color: 'red' }}>*</span> Field yang wajib diisi
         </small>
       </p>
 
@@ -182,52 +263,70 @@ const ApplicationForm = () => {
           <h4>Data Diri PMI</h4>
           
           <div className="form-group">
-            <label htmlFor="nama">Nama Lengkap</label>
+            <label htmlFor="nama">Nama Lengkap <span style={{color: 'red'}}>*</span></label>
             <input 
               type="text" 
               name="nama" 
               id="nama" 
               value={formData.nama} 
-              onChange={handleFormChange} 
-              required 
+              onChange={handleFormChange}
+              onBlur={handleBlur}
+              className={touched.nama && errors.nama ? 'error' : ''}
             />
+            {touched.nama && errors.nama && (
+              <small style={{ color: 'var(--error-color)', display: 'block', marginTop: '4px' }}>
+                {errors.nama}
+              </small>
+            )}
           </div>
 
           <div className="form-group">
-            <label htmlFor="asalKecamatan">Asal Kecamatan</label>
+            <label htmlFor="asalKecamatan">Asal Kecamatan <span style={{color: 'red'}}>*</span></label>
             <select
               name="asalKecamatan"
               id="asalKecamatan"
               value={formData.asalKecamatan}
               onChange={handleFormChange}
-              required
+              onBlur={handleBlur}
+              className={touched.asalKecamatan && errors.asalKecamatan ? 'error' : ''}
             >
               <option value="">-- Pilih Kecamatan --</option>
               {Object.keys(rembangData).map(kecamatan => (
                 <option key={kecamatan} value={kecamatan}>{kecamatan}</option>
               ))}
             </select>
+            {touched.asalKecamatan && errors.asalKecamatan && (
+              <small style={{ color: 'var(--error-color)', display: 'block', marginTop: '4px' }}>
+                {errors.asalKecamatan}
+              </small>
+            )}
           </div>
 
           <div className="form-group">
-            <label htmlFor="asalDesa">Asal Desa</label>
+            <label htmlFor="asalDesa">Asal Desa <span style={{color: 'red'}}>*</span></label>
             <select
               name="asalDesa"
               id="asalDesa"
               value={formData.asalDesa}
               onChange={handleFormChange}
-              required
+              onBlur={handleBlur}
               disabled={!formData.asalKecamatan}
+              className={touched.asalDesa && errors.asalDesa ? 'error' : ''}
             >
               <option value="">-- Pilih Desa --</option>
               {formData.asalKecamatan && rembangData[formData.asalKecamatan].map(desa => (
                 <option key={desa} value={desa}>{desa}</option>
               ))}
             </select>
+            {touched.asalDesa && errors.asalDesa && (
+              <small style={{ color: 'var(--error-color)', display: 'block', marginTop: '4px' }}>
+                {errors.asalDesa}
+              </small>
+            )}
           </div>
 
           <div className="form-group">
-            <label>Jenis Kelamin</label>
+            <label>Jenis Kelamin <span style={{color: 'red'}}>*</span></label>
             <div className="radio-group">
               <label>
                 <input 
@@ -258,51 +357,97 @@ const ApplicationForm = () => {
           <h4>Data Keberangkatan</h4>
           
           <div className="form-group">
-            <label htmlFor="negaraTujuan">Negara Tujuan</label>
-            <input 
-              type="text" 
-              name="negaraTujuan" 
-              id="negaraTujuan" 
-              value={formData.negaraTujuan} 
-              onChange={handleFormChange} 
-              placeholder="Contoh: Malaysia, Singapura, Hong Kong"
-              required 
-            />
+            <label htmlFor="benua">Benua Tujuan <span style={{color: 'red'}}>*</span></label>
+            <select
+              name="benua"
+              id="benua"
+              value={formData.benua}
+              onChange={handleFormChange}
+              onBlur={handleBlur}
+              className={touched.benua && errors.benua ? 'error' : ''}
+            >
+              <option value="">-- Pilih Benua --</option>
+              {Object.keys(countriesData).map(benua => (
+                <option key={benua} value={benua}>{benua}</option>
+              ))}
+            </select>
+            {touched.benua && errors.benua && (
+              <small style={{ color: 'var(--error-color)', display: 'block', marginTop: '4px' }}>
+                {errors.benua}
+              </small>
+            )}
           </div>
 
           <div className="form-group">
-            <label htmlFor="profesi">Profesi / Pekerjaan</label>
-            <input 
-              type="text" 
-              name="profesi" 
-              id="profesi" 
-              value={formData.profesi} 
-              onChange={handleFormChange} 
-              placeholder="Contoh: Perawat, Buruh Pabrik, Pelayan"
-              required 
-            />
+            <label htmlFor="negaraTujuan">Negara Tujuan <span style={{color: 'red'}}>*</span></label>
+            <select
+              name="negaraTujuan"
+              id="negaraTujuan"
+              value={formData.negaraTujuan}
+              onChange={handleFormChange}
+              onBlur={handleBlur}
+              disabled={!formData.benua}
+              className={touched.negaraTujuan && errors.negaraTujuan ? 'error' : ''}
+            >
+              <option value="">-- Pilih Negara --</option>
+              {formData.benua && countriesData[formData.benua].map(negara => (
+                <option key={negara} value={negara}>{negara}</option>
+              ))}
+            </select>
+            {touched.negaraTujuan && errors.negaraTujuan && (
+              <small style={{ color: 'var(--error-color)', display: 'block', marginTop: '4px' }}>
+                {errors.negaraTujuan}
+              </small>
+            )}
           </div>
 
           <div className="form-group">
-            <label htmlFor="waktuBerangkat">Rencana Waktu Berangkat</label>
+            <label htmlFor="profesi">Profesi / Pekerjaan <span style={{color: 'red'}}>*</span></label>
+            <select
+              name="profesi"
+              id="profesi"
+              value={formData.profesi}
+              onChange={handleFormChange}
+              onBlur={handleBlur}
+              className={touched.profesi && errors.profesi ? 'error' : ''}
+            >
+              <option value="">-- Pilih Profesi --</option>
+              {profesiData.map(profesi => (
+                <option key={profesi} value={profesi}>{profesi}</option>
+              ))}
+            </select>
+            {touched.profesi && errors.profesi && (
+              <small style={{ color: 'var(--error-color)', display: 'block', marginTop: '4px' }}>
+                {errors.profesi}
+              </small>
+            )}
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="waktuBerangkat">Rencana Waktu Berangkat <span style={{color: 'red'}}>*</span></label>
             <input 
               type="date" 
               name="waktuBerangkat" 
               id="waktuBerangkat" 
               value={formData.waktuBerangkat} 
-              onChange={handleFormChange} 
-              required 
+              onChange={handleFormChange}
+              onBlur={handleBlur}
+              className={touched.waktuBerangkat && errors.waktuBerangkat ? 'error' : ''}
             />
+            {touched.waktuBerangkat && errors.waktuBerangkat && (
+              <small style={{ color: 'var(--error-color)', display: 'block', marginTop: '4px' }}>
+                {errors.waktuBerangkat}
+              </small>
+            )}
           </div>
 
           <div className="form-group">
-            <label htmlFor="pendidikanTerakhir">Pendidikan Terakhir</label>
+            <label htmlFor="pendidikanTerakhir">Pendidikan Terakhir <span style={{color: 'red'}}>*</span></label>
             <select
               name="pendidikanTerakhir"
               id="pendidikanTerakhir"
               value={formData.pendidikanTerakhir}
               onChange={handleFormChange}
-              required
             >
               <option value="SD">SD</option>
               <option value="SMP">SMP</option>
@@ -360,11 +505,16 @@ const ApplicationForm = () => {
                 id={field.name} 
                 onChange={handleFileChange}
                 accept=".pdf,.jpg,.jpeg,.png"
-                required={field.required}
+                className={touched[field.name] && errors[field.name] ? 'error' : ''}
               />
               {fileFields[field.name] && (
                 <small style={{ color: 'var(--success-color)' }}>
                   File terpilih: {fileFields[field.name].name}
+                </small>
+              )}
+              {touched[field.name] && errors[field.name] && (
+                <small style={{ color: 'var(--error-color)', display: 'block', marginTop: '4px' }}>
+                  {errors[field.name]}
                 </small>
               )}
             </div>
