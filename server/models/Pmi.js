@@ -139,7 +139,8 @@ const PmiSchema = new mongoose.Schema({
     status: String,
     changedBy: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User'
+      ref: 'User',
+      default: null
     },
     note: String,
     changedAt: {

@@ -78,7 +78,7 @@ const LoginPage = () => {
           </div>
         </div>
         
-        <h1>Sistem Rekap Data PMI Kabupaten Rembang</h1>
+        <h1>Sistem Pendaftaran dan Rekap Data PMI Kabupaten Rembang</h1>
         
         <form onSubmit={onSubmit} className="login-form">
           <div className="form-group">
@@ -95,7 +95,7 @@ const LoginPage = () => {
             />
           </div>
           
-          <div className="form-group">
+                    <div className="form-group">
             <label htmlFor="password">Password</label>
             <div style={{ position: 'relative' }}>
               <input
@@ -107,16 +107,15 @@ const LoginPage = () => {
                 placeholder="Masukkan password"
                 required
                 autoComplete="current-password"
-                style={{ paddingRight: '40px' }}
+                style={{ paddingRight: '45px' }}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="password-toggle-btn"
                 aria-label={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}
                 style={{
                   position: 'absolute',
-                  right: '10px',
+                  right: '12px',
                   top: '50%',
                   transform: 'translateY(-50%)',
                   background: 'none',
@@ -124,7 +123,11 @@ const LoginPage = () => {
                   cursor: 'pointer',
                   padding: '5px',
                   fontSize: '18px',
-                  color: 'var(--text-secondary)'
+                  color: 'var(--text-secondary)',
+                  lineHeight: '1',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
                 }}
               >
                 {showPassword ? '👁️' : '👁️‍🗨️'}

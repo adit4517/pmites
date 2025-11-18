@@ -17,11 +17,8 @@ const SubmissionsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [notification, setNotification] = useState({ show: false, type: '', message: '' });
 
-  useEffect(() => {
-    fetchSubmissions();
-  }, [statusFilter, searchTerm]);
-
-  const fetchSubmissions = async () => {
+  const fetchSubmissions = React.useCallback(async () => {
+    setLoading(true);
     try {
       const config = {
         headers: { 'Authorization': `Bearer ${state.token}` },
@@ -34,11 +31,15 @@ const SubmissionsPage = () => {
       setSubmissions(res.data.submissions);
     } catch (err) {
       console.error('Error fetching submissions:', err);
-      showNotification('Gagal memuat data', 'error');
+      showNotification('Gagal memload data', 'error');
     } finally {
       setLoading(false);
     }
-  };
+  }, [state.token, statusFilter, searchTerm]);
+
+  useEffect(() => {
+    fetchSubmissions();
+  }, [statusFilter, searchTerm, state.token, fetchSubmissions]);
 
   const showNotification = (message, type) => {
     setNotification({ show: true, type, message });
@@ -78,14 +79,18 @@ const SubmissionsPage = () => {
         } else if (actionType === 'reject') {
           statusData = {
             status: 'rejected',
+            note: actionNote,
             rejectionReason: actionNote
           };
         } else if (actionType === 'revision') {
           statusData = {
             status: 'need_revision',
+            note: actionNote,
             revisionNotes: actionNote
           };
         }
+
+        console.log('Sending status update:', statusData); // Debug log
 
         await axios.put(
           `http://localhost:5000/api/pmi/${selectedSubmission._id}/status`,
@@ -95,10 +100,12 @@ const SubmissionsPage = () => {
 
         showNotification('Status berhasil diupdate', 'success');
         setShowActionModal(false);
+        setActionNote('');
         fetchSubmissions();
       } catch (err) {
         console.error('Error updating status:', err);
-        showNotification('Gagal update status', 'error');
+        const errorMsg = err.response?.data?.msg || err.response?.data?.message || 'Gagal update status';
+        showNotification(errorMsg, 'error');
       }
     }
   };

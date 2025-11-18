@@ -25,12 +25,24 @@ const RegisterPage = () => {
     }
   });
 
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [notification, setNotification] = useState({ show: false, type: '', message: '' });
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    
+    // Limit phone number to 15 characters
+    if (name === 'phone' && value.length > 15) {
+      return;
+    }
+
+    // Limit NIK to 16 characters
+    if (name === 'nik' && value.length > 16) {
+      return;
+    }
     
     if (name.startsWith('address.')) {
       const addressField = name.split('.')[1];
@@ -90,6 +102,8 @@ const RegisterPage = () => {
 
     if (!formData.phone.trim()) {
       newErrors.phone = 'Nomor telepon harus diisi';
+    } else if (formData.phone.length < 10) {
+      newErrors.phone = 'Nomor telepon minimal 10 digit';
     }
 
     if (!formData.dateOfBirth) {
@@ -161,7 +175,7 @@ const RegisterPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-red-50 to-gray-100 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="login-container">
       {notification.show && (
         <div className={`notification ${notification.type}`}>
           {notification.message}
@@ -171,172 +185,314 @@ const RegisterPage = () => {
         </div>
       )}
 
-      <div className="max-w-3xl mx-auto">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-red-600 rounded-full mb-4">
-            <span className="text-white font-bold text-2xl">P</span>
+      <div className="login-box" style={{ maxWidth: '600px', marginTop: '30px', marginBottom: '30px' }}>
+        <div style={{ marginBottom: '20px' }}>
+          <div style={{
+            width: '80px',
+            height: '80px',
+            background: 'var(--primary-color)',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            margin: '0 auto 20px',
+            fontSize: '2em',
+            fontWeight: 'bold',
+            color: 'white'
+          }}>
+            P
           </div>
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">
-            Daftar Sebagai Calon PMI
-          </h2>
-          <p className="text-gray-600">
-            Lengkapi data diri Anda untuk membuat akun
-          </p>
         </div>
+        
+        <h1>Daftar Sebagai Calon PMI</h1>
+        <p style={{ color: 'var(--text-secondary)', marginBottom: '25px' }}>
+          Lengkapi data diri Anda untuk membuat akun
+        </p>
+        
+        <form onSubmit={handleSubmit} className="login-form">
+          {/* Informasi Akun */}
+          <div style={{ 
+            marginBottom: '25px', 
+            paddingBottom: '20px', 
+            borderBottom: '2px solid #eee' 
+          }}>
+            <h3 style={{ 
+              fontSize: '1.1em', 
+              marginBottom: '15px', 
+              color: 'var(--primary-color)' 
+            }}>
+              Informasi Akun
+            </h3>
+            
+            <div className="form-group">
+              <label htmlFor="username">Username <span style={{ color: 'red' }}>*</span></label>
+              <input
+                type="text"
+                name="username"
+                id="username"
+                value={formData.username}
+                onChange={handleChange}
+                placeholder="username_anda"
+                className={errors.username ? 'error' : ''}
+              />
+              {errors.username && (
+                <small style={{ color: 'var(--error-color)', display: 'block', marginTop: '4px' }}>
+                  {errors.username}
+                </small>
+              )}
+            </div>
 
-        <div className="bg-white rounded-xl shadow-lg p-8">
-          <form onSubmit={handleSubmit} className="pmi-form">
-            <div className="form-section">
-              <h4>Informasi Akun</h4>
-              
-              <div className="form-group">
-                <label>Username <span style={{color: 'red'}}>*</span></label>
-                <input
-                  type="text"
-                  name="username"
-                  value={formData.username}
-                  onChange={handleChange}
-                  placeholder="username_anda"
-                  className={errors.username ? 'error' : ''}
-                />
-                {errors.username && <small className="error-text">{errors.username}</small>}
-              </div>
+            <div className="form-group">
+              <label htmlFor="email">Email <span style={{ color: 'red' }}>*</span></label>
+              <input
+                type="email"
+                name="email"
+                id="email"
+                value={formData.email}
+                onChange={handleChange}
+                placeholder="email@example.com"
+                className={errors.email ? 'error' : ''}
+              />
+              {errors.email && (
+                <small style={{ color: 'var(--error-color)', display: 'block', marginTop: '4px' }}>
+                  {errors.email}
+                </small>
+              )}
+            </div>
 
-              <div className="form-group">
-                <label>Email <span style={{color: 'red'}}>*</span></label>
+            <div className="form-group">
+              <label htmlFor="password">Password <span style={{ color: 'red' }}>*</span></label>
+              <div style={{ position: 'relative' }}>
                 <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  placeholder="email@example.com"
-                  className={errors.email ? 'error' : ''}
-                />
-                {errors.email && <small className="error-text">{errors.email}</small>}
-              </div>
-
-              <div className="form-group">
-                <label>Password <span style={{color: 'red'}}>*</span></label>
-                <input
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   name="password"
+                  id="password"
                   value={formData.password}
                   onChange={handleChange}
                   placeholder="Minimal 6 karakter"
                   className={errors.password ? 'error' : ''}
+                  style={{ paddingRight: '45px' }}
                 />
-                {errors.password && <small className="error-text">{errors.password}</small>}
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{
+                    position: 'absolute',
+                    right: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: '5px',
+                    fontSize: '18px',
+                    color: 'var(--text-secondary)',
+                    lineHeight: '1'
+                  }}
+                >
+                  {showPassword ? '👁️' : '👁️‍🗨️'}
+                </button>
               </div>
+              {errors.password && (
+                <small style={{ color: 'var(--error-color)', display: 'block', marginTop: '4px' }}>
+                  {errors.password}
+                </small>
+              )}
+            </div>
 
-              <div className="form-group">
-                <label>Konfirmasi Password <span style={{color: 'red'}}>*</span></label>
+            <div className="form-group">
+              <label htmlFor="confirmPassword">Konfirmasi Password <span style={{ color: 'red' }}>*</span></label>
+              <div style={{ position: 'relative' }}>
                 <input
-                  type="password"
+                  type={showConfirmPassword ? 'text' : 'password'}
                   name="confirmPassword"
+                  id="confirmPassword"
                   value={formData.confirmPassword}
                   onChange={handleChange}
                   placeholder="Ulangi password"
                   className={errors.confirmPassword ? 'error' : ''}
+                  style={{ paddingRight: '45px' }}
                 />
-                {errors.confirmPassword && <small className="error-text">{errors.confirmPassword}</small>}
-              </div>
-            </div>
-
-            <div className="form-section">
-              <h4>Data Pribadi</h4>
-              
-              <div className="form-group">
-                <label>Nama Lengkap <span style={{color: 'red'}}>*</span></label>
-                <input
-                  type="text"
-                  name="fullName"
-                  value={formData.fullName}
-                  onChange={handleChange}
-                  placeholder="Nama lengkap sesuai KTP"
-                  className={errors.fullName ? 'error' : ''}
-                />
-                {errors.fullName && <small className="error-text">{errors.fullName}</small>}
-              </div>
-
-              <div className="form-group">
-                <label>NIK (16 digit) <span style={{color: 'red'}}>*</span></label>
-                <input
-                  type="text"
-                  name="nik"
-                  value={formData.nik}
-                  onChange={handleChange}
-                  maxLength={16}
-                  placeholder="1234567890123456"
-                  className={errors.nik ? 'error' : ''}
-                />
-                {errors.nik && <small className="error-text">{errors.nik}</small>}
-              </div>
-
-              <div className="form-group">
-                <label>Nomor Telepon <span style={{color: 'red'}}>*</span></label>
-                <input
-                  type="tel"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  placeholder="08123456789"
-                  className={errors.phone ? 'error' : ''}
-                />
-                {errors.phone && <small className="error-text">{errors.phone}</small>}
-              </div>
-
-              <div className="form-group">
-                <label>Tanggal Lahir <span style={{color: 'red'}}>*</span></label>
-                <input
-                  type="date"
-                  name="dateOfBirth"
-                  value={formData.dateOfBirth}
-                  onChange={handleChange}
-                  className={errors.dateOfBirth ? 'error' : ''}
-                />
-                {errors.dateOfBirth && <small className="error-text">{errors.dateOfBirth}</small>}
-              </div>
-
-              <div className="form-group">
-                <label>Jenis Kelamin <span style={{color: 'red'}}>*</span></label>
-                <select
-                  name="gender"
-                  value={formData.gender}
-                  onChange={handleChange}
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  style={{
+                    position: 'absolute',
+                    right: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: '5px',
+                    fontSize: '18px',
+                    color: 'var(--text-secondary)',
+                    lineHeight: '1'
+                  }}
                 >
-                  <option value="Laki-laki">Laki-laki</option>
-                  <option value="Perempuan">Perempuan</option>
-                </select>
+                  {showConfirmPassword ? '👁️' : '👁️‍🗨️'}
+                </button>
               </div>
+              {errors.confirmPassword && (
+                <small style={{ color: 'var(--error-color)', display: 'block', marginTop: '4px' }}>
+                  {errors.confirmPassword}
+                </small>
+              )}
+            </div>
+          </div>
 
-              <div className="form-group">
-                <label>Alamat Lengkap (Opsional)</label>
-                <textarea
-                  name="address.fullAddress"
-                  value={formData.address.fullAddress}
-                  onChange={handleChange}
-                  rows={3}
-                  placeholder="Jl. Contoh No. 123, RT/RW 01/02..."
-                />
-              </div>
+          {/* Data Pribadi */}
+          <div style={{ marginBottom: '25px' }}>
+            <h3 style={{ 
+              fontSize: '1.1em', 
+              marginBottom: '15px', 
+              color: 'var(--primary-color)' 
+            }}>
+              Data Pribadi
+            </h3>
+            
+            <div className="form-group">
+              <label htmlFor="fullName">Nama Lengkap <span style={{ color: 'red' }}>*</span></label>
+              <input
+                type="text"
+                name="fullName"
+                id="fullName"
+                value={formData.fullName}
+                onChange={handleChange}
+                placeholder="Nama lengkap sesuai KTP"
+                className={errors.fullName ? 'error' : ''}
+              />
+              {errors.fullName && (
+                <small style={{ color: 'var(--error-color)', display: 'block', marginTop: '4px' }}>
+                  {errors.fullName}
+                </small>
+              )}
             </div>
 
-            <div className="form-buttons">
-              <button type="submit" className="submit-btn" disabled={loading}>
-                {loading ? 'Mendaftar...' : 'Daftar Sekarang'}
-              </button>
-              <button type="button" className="reset-btn" onClick={() => navigate('/login')}>
-                Sudah Punya Akun
-              </button>
+            <div className="form-group">
+              <label htmlFor="nik">NIK (16 digit) <span style={{ color: 'red' }}>*</span></label>
+              <input
+                type="text"
+                name="nik"
+                id="nik"
+                value={formData.nik}
+                onChange={handleChange}
+                maxLength={16}
+                placeholder="1234567890123456"
+                className={errors.nik ? 'error' : ''}
+              />
+              <small style={{ color: 'var(--text-light)', display: 'block', marginTop: '4px' }}>
+                {formData.nik.length}/16 karakter
+              </small>
+              {errors.nik && (
+                <small style={{ color: 'var(--error-color)', display: 'block', marginTop: '4px' }}>
+                  {errors.nik}
+                </small>
+              )}
             </div>
 
-            <div style={{textAlign: 'center', marginTop: '20px'}}>
-              <Link to="/" style={{color: 'var(--secondary-color)', textDecoration: 'none'}}>
-                ← Kembali ke Beranda
-              </Link>
+            <div className="form-group">
+              <label htmlFor="phone">Nomor Telepon <span style={{ color: 'red' }}>*</span></label>
+              <input
+                type="tel"
+                name="phone"
+                id="phone"
+                value={formData.phone}
+                onChange={handleChange}
+                maxLength={15}
+                placeholder="08123456789"
+                className={errors.phone ? 'error' : ''}
+              />
+              <small style={{ color: 'var(--text-light)', display: 'block', marginTop: '4px' }}>
+                {formData.phone.length}/15 karakter
+              </small>
+              {errors.phone && (
+                <small style={{ color: 'var(--error-color)', display: 'block', marginTop: '4px' }}>
+                  {errors.phone}
+                </small>
+              )}
             </div>
-          </form>
-        </div>
+
+            <div className="form-group">
+              <label htmlFor="dateOfBirth">Tanggal Lahir <span style={{ color: 'red' }}>*</span></label>
+              <input
+                type="date"
+                name="dateOfBirth"
+                id="dateOfBirth"
+                value={formData.dateOfBirth}
+                onChange={handleChange}
+                className={errors.dateOfBirth ? 'error' : ''}
+              />
+              {errors.dateOfBirth && (
+                <small style={{ color: 'var(--error-color)', display: 'block', marginTop: '4px' }}>
+                  {errors.dateOfBirth}
+                </small>
+              )}
+            </div>
+
+            <div className="form-group">
+              <label>Jenis Kelamin <span style={{ color: 'red' }}>*</span></label>
+              <select
+                name="gender"
+                value={formData.gender}
+                onChange={handleChange}
+              >
+                <option value="Laki-laki">Laki-laki</option>
+                <option value="Perempuan">Perempuan</option>
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="address.fullAddress">Alamat Lengkap (Opsional)</label>
+              <textarea
+                name="address.fullAddress"
+                id="address.fullAddress"
+                value={formData.address.fullAddress}
+                onChange={handleChange}
+                rows={3}
+                placeholder="Jl. Contoh No. 123, RT/RW 01/02..."
+              />
+            </div>
+          </div>
+
+          <button type="submit" disabled={loading}>
+            {loading ? 'Mendaftar...' : 'Daftar Sekarang'}
+          </button>
+
+          <div style={{
+            marginTop: '20px',
+            padding: '15px 0',
+            borderTop: '1px solid #eee',
+            textAlign: 'center'
+          }}>
+            <p style={{ marginBottom: '10px', color: 'var(--text-secondary)' }}>
+              Sudah punya akun?
+            </p>
+            <Link 
+              to="/login" 
+              style={{
+                color: 'var(--secondary-color)',
+                textDecoration: 'none',
+                fontWeight: '600'
+              }}
+            >
+              Login di sini
+            </Link>
+          </div>
+
+          <div style={{ marginTop: '15px', textAlign: 'center' }}>
+            <Link 
+              to="/" 
+              style={{
+                color: 'var(--secondary-color)',
+                textDecoration: 'none',
+                fontSize: '0.9em'
+              }}
+            >
+              ← Kembali ke Beranda
+            </Link>
+          </div>
+        </form>
       </div>
     </div>
   );

@@ -428,9 +428,8 @@ exports.updatePmiStatus = async (req, res) => {
       return res.status(404).json({ msg: 'Data PMI tidak ditemukan' });
     }
 
-    await pmi.updateStatus(status, req.user.id, note || '');
-
-    if (!pmi.processedBy) {
+    // Set additional fields before updating status
+    if (!pmi.processedBy && req.user.id !== 'admin_static_id') {
       pmi.processedBy = req.user.id;
     }
 
@@ -442,7 +441,9 @@ exports.updatePmiStatus = async (req, res) => {
       pmi.revisionNotes = revisionNotes;
     }
 
-    await pmi.save();
+    // Handle admin user specially for status update
+    const changedById = req.user.id === 'admin_static_id' ? null : req.user.id;
+    await pmi.updateStatus(status, changedById, note || '');
 
     res.json({
       success: true,

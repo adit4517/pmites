@@ -254,7 +254,7 @@ exports.updateProfile = async (req, res) => {
 // @route   PUT /api/auth/change-password
 // @access  Private
 exports.changePassword = async (req, res) => {
-  const { oldPassword, newPassword } = req.body;
+  const { currentPassword, newPassword } = req.body;
 
   try {
     if (req.user.id === 'admin_static_id') {
@@ -267,7 +267,7 @@ exports.changePassword = async (req, res) => {
     }
 
     // Verify old password
-    const isMatch = await user.comparePassword(oldPassword);
+    const isMatch = await user.comparePassword(currentPassword);
     if (!isMatch) {
       return res.status(400).json({ msg: 'Password lama salah' });
     }
