@@ -1,6 +1,6 @@
 // File: client/src/pages/user/UserProfile.js
 
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { AuthContext } from '../../App';
 import axios from 'axios';
 
@@ -30,11 +30,7 @@ const UserProfile = () => {
   const [showPasswordForm, setShowPasswordForm] = useState(false);
   const [notification, setNotification] = useState({ show: false, type: '', message: '' });
 
-  useEffect(() => {
-    fetchUserData();
-  }, []);
-
-  const fetchUserData = async () => {
+  const fetchUserData = useCallback(async () => {
     try {
       const config = {
         headers: { 'Authorization': `Bearer ${state.token}` }
@@ -59,7 +55,11 @@ const UserProfile = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [state.token]);
+
+  useEffect(() => {
+    fetchUserData();
+  }, [fetchUserData]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
