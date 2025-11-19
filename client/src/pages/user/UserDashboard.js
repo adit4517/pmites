@@ -1,48 +1,48 @@
 // File: client/src/pages/user/UserDashboard.js
 
 import React, { useState, useEffect, useContext } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { AuthContext } from '../../App';
+import PmiCard from '../../components/user/PmiCard';
 import axios from 'axios';
 
 const UserDashboard = () => {
   const { state } = useContext(AuthContext);
-  const navigate = useNavigate();
   const [application, setApplication] = useState(null);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
+  const [showPmiCard, setShowPmiCard] = useState(false);
 
   useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const config = {
+          headers: { 'Authorization': `Bearer ${state.token}` }
+        };
+        const res = await axios.get('http://localhost:5000/api/auth/me', config);
+        setUser(res.data.user);
+      } catch (err) {
+        console.error('Error fetching user data:', err);
+      }
+    };
+
+    const fetchApplication = async () => {
+      try {
+        const config = {
+          headers: { 'Authorization': `Bearer ${state.token}` }
+        };
+        const res = await axios.get('http://localhost:5000/api/pmi/my-application', config);
+        setApplication(res.data.pmi);
+      } catch (err) {
+        console.log('No application yet');
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchUserData();
     fetchApplication();
-  }, []);
-
-  const fetchUserData = async () => {
-    try {
-      const config = {
-        headers: { 'Authorization': `Bearer ${state.token}` }
-      };
-      const res = await axios.get('http://localhost:5000/api/auth/me', config);
-      setUser(res.data.user);
-    } catch (err) {
-      console.error('Error fetching user data:', err);
-    }
-  };
-
-  const fetchApplication = async () => {
-    try {
-      const config = {
-        headers: { 'Authorization': `Bearer ${state.token}` }
-      };
-      const res = await axios.get('http://localhost:5000/api/pmi/my-application', config);
-      setApplication(res.data.pmi);
-    } catch (err) {
-      // Tidak ada aplikasi, itu OK
-      console.log('No application yet');
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [state.token]);
 
   const getStatusBadgeClass = (status) => {
     const statusColors = {
@@ -127,7 +127,11 @@ const UserDashboard = () => {
                 <div style={{
                   padding: '15px',
                   borderRadius: '8px',
-                  ...{ [getStatusBadgeClass(application.status).split(';')[0].split(':')[0]]: getStatusBadgeClass(application.status).split(';')[0].split(':')[1] },
+                  ...Object.fromEntries(
+                    getStatusBadgeClass(application.status)
+                      .split(';')
+                      .map(style => style.trim().split(':').map(s => s.trim()))
+                  ),
                   marginBottom: '15px',
                   textAlign: 'center',
                   fontSize: '1.2em',
@@ -140,6 +144,9 @@ const UserDashboard = () => {
                   <p><strong>Tanggal Dibuat:</strong> {new Date(application.createdAt).toLocaleDateString('id-ID')}</p>
                   {application.submittedAt && (
                     <p><strong>Tanggal Submit:</strong> {new Date(application.submittedAt).toLocaleDateString('id-ID')}</p>
+                  )}
+                  {application.approvedAt && (
+                    <p><strong>Disetujui:</strong> {new Date(application.approvedAt).toLocaleDateString('id-ID')}</p>
                   )}
                 </div>
                 <Link 
@@ -154,6 +161,22 @@ const UserDashboard = () => {
                 >
                   Lihat Detail
                 </Link>
+                
+                {/* Tombol Cetak Kartu - hanya muncul jika approved */}
+                {application.status === 'approved' && (
+                  <button
+                    className="submit-btn"
+                    onClick={() => setShowPmiCard(true)}
+                    style={{ 
+                      display: 'block', 
+                      marginTop: '10px',
+                      width: '100%',
+                      textAlign: 'center'
+                    }}
+                  >
+                    🎫 Cetak Kartu PMI
+                  </button>
+                )}
               </div>
             </div>
 
@@ -304,6 +327,25 @@ const UserDashboard = () => {
                     ✏️ Edit Aplikasi
                   </Link>
                 )}
+                {application.status === 'approved' && (
+                  <button
+                    onClick={() => setShowPmiCard(true)}
+                    style={{
+                      width: '100%',
+                      padding: '10px',
+                      background: '#f8f9fa',
+                      borderRadius: '5px',
+                      marginBottom: '10px',
+                      textDecoration: 'none',
+                      color: 'inherit',
+                      border: 'none',
+                      textAlign: 'left',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    🎫 Cetak Kartu PMI
+                  </button>
+                )}
               </>
             ) : (
               <Link 
@@ -338,6 +380,14 @@ const UserDashboard = () => {
           </div>
         </div>
       </div>
+
+      {/* Modal Kartu PMI */}
+      {showPmiCard && application && (
+        <PmiCard 
+          pmiData={{ ...application, user }}
+          onClose={() => setShowPmiCard(false)}
+        />
+      )}
     </div>
   );
 };

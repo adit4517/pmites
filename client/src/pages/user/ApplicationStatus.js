@@ -13,8 +13,25 @@ const ApplicationStatus = () => {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
+    const fetchApplication = async () => {
+      try {
+        const config = {
+          headers: { 'Authorization': `Bearer ${state.token}` }
+        };
+        const res = await axios.get('http://localhost:5000/api/pmi/my-application', config);
+        setApplication(res.data.pmi);
+      } catch (err) {
+        console.error('Error fetching application:', err);
+        if (err.response?.status === 404) {
+          navigate('/user/dashboard');
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchApplication();
-  }, []);
+  }, [state.token, navigate]);
 
   const fetchApplication = async () => {
     try {
@@ -294,6 +311,7 @@ const ApplicationStatus = () => {
 
       {/* Action Buttons */}
       <div style={{ marginTop: '30px', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+        {/* Draft - bisa submit dan edit */}
         {application.status === 'draft' && (
           <>
             <button 
@@ -309,10 +327,21 @@ const ApplicationStatus = () => {
           </>
         )}
         
+        {/* Need Revision - bisa edit dan submit ulang setelah revisi */}
         {application.status === 'need_revision' && (
-          <Link to="/user/application/edit" className="edit-btn">
-            Revisi Aplikasi
-          </Link>
+          <>
+            <Link to="/user/application/edit" className="edit-btn">
+              Revisi Aplikasi
+            </Link>
+            <button 
+              className="submit-btn" 
+              onClick={handleSubmitApplication}
+              disabled={submitting}
+              style={{ marginLeft: '10px' }}
+            >
+              {submitting ? 'Mengirim...' : 'Submit Ulang'}
+            </button>
+          </>
         )}
 
         <Link to="/user/dashboard" className="reset-btn">
