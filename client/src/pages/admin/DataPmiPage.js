@@ -60,8 +60,9 @@ const DataPmiPage = () => {
     window.open(downloadUrl, '_blank');
   };
 
-  const handleViewDocument = (path) => {
-    window.open(`http://localhost:5000/${path}`, '_blank');
+  const handleViewDocument = (pmiId, docField) => {
+    const viewUrl = `http://localhost:5000/api/pmi/view/${pmiId}/${docField}`;
+    window.open(viewUrl, '_blank');
   };
 
   const handleDelete = async (id) => {
@@ -379,7 +380,7 @@ const DataPmiPage = () => {
                             <>
                               <button 
                                 className="view-btn" 
-                                onClick={() => handleViewDocument(path)}
+                                onClick={() => handleViewDocument(selectedPmi._id, key)}
                                 style={{ marginRight: '5px' }}
                               >
                                 Lihat

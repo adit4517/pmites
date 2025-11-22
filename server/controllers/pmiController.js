@@ -554,6 +554,71 @@ exports.downloadDocument = async (req, res) => {
   }
 };
 
+// @desc    View document in browser
+// @route   GET /api/pmi/view/:pmiId/:docField
+// @access  Private
+exports.viewDocument = async (req, res) => {
+  try {
+    const pmi = await Pmi.findById(req.params.pmiId);
+    
+    if (!pmi) {
+      return res.status(404).send('PMI not found.');
+    }
+
+    if (req.user.role !== 'admin' && pmi.user.toString() !== req.user.id) {
+      return res.status(403).send('Unauthorized');
+    }
+
+    const docField = req.params.docField;
+    const filePath = pmi.dokumen[docField];
+
+    if (!filePath) {
+      return res.status(404).send('Document not found.');
+    }
+
+    const absolutePath = path.join(__dirname, '..', filePath);
+    
+    // Check if file exists
+    if (!fs.existsSync(absolutePath)) {
+      return res.status(404).send('File not found.');
+    }
+
+    // Determine content type
+    const ext = path.extname(filePath).toLowerCase();
+    let contentType = 'application/octet-stream';
+    
+    switch(ext) {
+      case '.pdf':
+        contentType = 'application/pdf';
+        break;
+      case '.jpg':
+      case '.jpeg':
+        contentType = 'image/jpeg';
+        break;
+      case '.png':
+        contentType = 'image/png';
+        break;
+      case '.doc':
+        contentType = 'application/msword';
+        break;
+      case '.docx':
+        contentType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+        break;
+    }
+
+    // Set headers to display in browser instead of downloading
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Content-Disposition', `inline; filename="${path.basename(filePath)}"`);
+    
+    // Send file
+    res.sendFile(absolutePath);
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Server error');
+  }
+};
+
 // ============ STATISTICS (untuk Admin) ============
 
 const createDateMatchStage = (req) => {

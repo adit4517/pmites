@@ -17,6 +17,7 @@ const {
   addAdminNote,
   deletePmi,
   downloadDocument,
+  viewDocument,
   
   // Statistics Functions
   getStatsJumlahPmi,
@@ -147,5 +148,19 @@ router.get('/stats/status', authMiddleware, authorizeRoles('admin'), getStatsByS
 // @desc    Get PMI statistics by year
 // @access  Private (Admin only)
 router.get('/stats/yearly', authMiddleware, authorizeRoles('admin'), getStatsYearly);
+
+// ============================================
+// DOCUMENT ROUTES (Private - Admin & Owner)
+// ============================================
+
+// @route   GET /api/pmi/view/:pmiId/:docField
+// @desc    View document in browser
+// @access  Private (Admin & Owner of application)
+router.get('/view/:pmiId/:docField', authMiddleware, viewDocument);
+
+// @route   GET /api/pmi/download/:pmiId/:docField
+// @desc    Download document
+// @access  Private (Admin & Owner of application)
+router.get('/download/:pmiId/:docField', authMiddleware, downloadDocument);
 
 module.exports = router;

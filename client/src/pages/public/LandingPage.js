@@ -5,6 +5,7 @@ import { Link, useNavigate } from 'react-router-dom';
 
 const LandingPage = () => {
   const navigate = useNavigate();
+  // eslint-disable-next-line no-unused-vars
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const scrollToSection = (sectionId) => {
@@ -179,7 +180,7 @@ const LandingPage = () => {
               fontWeight: '700',
               lineHeight: '1.2'
             }}>
-              Sistem Rekap Data<br/>
+              Sistem Pendaftaran & Rekap Data<br/>
               <span style={{ color: '#1ABC9C' }}>PMI Kabupaten Rembang</span>
             </h1>
             
@@ -600,7 +601,7 @@ const LandingPage = () => {
                 <span style={{ fontWeight: '600', fontSize: '1.2em' }}>PMI Rembang</span>
               </div>
               <p style={{ opacity: 0.8, lineHeight: '1.6' }}>
-                Sistem Rekap Data PMI Kabupaten Rembang - Platform digital terpadu untuk pengelolaan data Pekerja Migran Indonesia.
+                Sistem Pendaftaran & Rekap Data PMI Kabupaten Rembang - Platform digital terpadu untuk pengelolaan data Pekerja Migran Indonesia.
               </p>
             </div>
 

@@ -8,24 +8,55 @@ const PmiCard = ({ pmiData, onClose }) => {
   const cardRef = useRef();
 
   const handlePrint = () => {
-    window.print();
+    const printContent = cardRef.current;
+    const printWindow = window.open('', '', 'height=600,width=900');
+    
+    printWindow.document.write('<html><head><title>Kartu PMI</title>');
+    printWindow.document.write('<style>');
+    printWindow.document.write(`
+      body { margin: 0; padding: 20px; }
+      @page { size: landscape; margin: 0; }
+      @media print {
+        body { margin: 0; padding: 0; }
+        .no-print { display: none !important; }
+      }
+    `);
+    printWindow.document.write('</style></head><body>');
+    printWindow.document.write(printContent.outerHTML);
+    printWindow.document.write('</body></html>');
+    
+    printWindow.document.close();
+    printWindow.focus();
+    
+    setTimeout(() => {
+      printWindow.print();
+      printWindow.close();
+    }, 250);
   };
 
   const handleDownloadPDF = async () => {
     const element = cardRef.current;
     const canvas = await html2canvas(element, {
       scale: 2,
-      backgroundColor: '#ffffff'
+      backgroundColor: '#ffffff',
+      logging: false,
+      useCORS: true
     });
     
     const imgData = canvas.toDataURL('image/png');
+    
+    // Ukuran landscape A6 (atau kartu standar)
     const pdf = new jsPDF({
-      orientation: 'portrait',
+      orientation: 'landscape',
       unit: 'mm',
-      format: [85.6, 53.98] // Ukuran kartu standar (credit card size)
+      format: [150, 100] // Landscape format
     });
     
-    pdf.addImage(imgData, 'PNG', 0, 0, 85.6, 53.98);
+    // Calculate dimensions to fit the card
+    const imgWidth = 150;
+    const imgHeight = 100;
+    
+    pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
     pdf.save(`Kartu-PMI-${pmiData.pmiId}.pdf`);
   };
 
@@ -39,12 +70,23 @@ const PmiCard = ({ pmiData, onClose }) => {
     return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
   };
 
+  // Get profile picture URL
+  const getProfilePictureUrl = () => {
+    if (pmiData.user?.profile?.profilePicture) {
+      return `http://localhost:5000/${pmiData.user.profile.profilePicture}`;
+    }
+    // Default avatar jika tidak ada foto
+    return null;
+  };
+
+  const profilePicUrl = getProfilePictureUrl();
+
   return (
     <div className="modal">
-      <div className="modal-content" style={{ maxWidth: '900px' }}>
-        <button className="close-btn" onClick={onClose}>&times;</button>
+      <div className="modal-content" style={{ maxWidth: '1000px' }}>
+        <button className="close-btn no-print" onClick={onClose}>&times;</button>
         
-        <h3 style={{ marginBottom: '20px' }}>Kartu Identitas PMI</h3>
+        <h3 className="no-print" style={{ marginBottom: '20px' }}>Kartu Identitas PMI</h3>
 
         {/* Card Preview */}
         <div 
@@ -150,10 +192,51 @@ const PmiCard = ({ pmiData, onClose }) => {
 
             <div style={{
               display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
+              gridTemplateColumns: 'auto 1fr 1fr',
               gap: '20px',
               marginTop: '20px'
             }}>
+              {/* Foto Profile */}
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '10px'
+              }}>
+                {profilePicUrl ? (
+                  <img 
+                    src={profilePicUrl}
+                    alt="Pas Foto"
+                    style={{
+                      width: '120px',
+                      height: '160px',
+                      objectFit: 'cover',
+                      borderRadius: '8px',
+                      border: '3px solid #1ABC9C',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+                    }}
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                      e.target.nextSibling.style.display = 'flex';
+                    }}
+                  />
+                ) : null}
+                <div style={{
+                  width: '120px',
+                  height: '160px',
+                  background: '#ecf0f1',
+                  borderRadius: '8px',
+                  border: '3px solid #1ABC9C',
+                  display: profilePicUrl ? 'none' : 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '3em',
+                  color: '#95a5a6'
+                }}>
+                  👤
+                </div>
+              </div>
+
               {/* Kolom Kiri */}
               <div>
                 <div style={{ marginBottom: '15px' }}>
@@ -357,7 +440,7 @@ const PmiCard = ({ pmiData, onClose }) => {
         </div>
 
         {/* Action Buttons */}
-        <div className="form-buttons" style={{ justifyContent: 'center', marginTop: '20px' }}>
+        <div className="form-buttons no-print" style={{ justifyContent: 'center', marginTop: '20px' }}>
           <button 
             className="submit-btn" 
             onClick={handleDownloadPDF}
@@ -380,25 +463,6 @@ const PmiCard = ({ pmiData, onClose }) => {
             Tutup
           </button>
         </div>
-
-        {/* Print Styles */}
-        <style jsx>{`
-          @media print {
-            body * {
-              visibility: hidden;
-            }
-            ${cardRef.current && `
-              #pmi-card, #pmi-card * {
-                visibility: visible;
-              }
-              #pmi-card {
-                position: absolute;
-                left: 0;
-                top: 0;
-              }
-            `}
-          }
-        `}</style>
       </div>
     </div>
   );

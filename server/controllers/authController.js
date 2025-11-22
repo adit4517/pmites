@@ -1,6 +1,35 @@
+// File: server/controllers/authController.js
+
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+
+// Multer configuration for profile pictures
+const storage = multer.diskStorage({
+  destination: './uploads/profiles/',
+  filename: function (req, file, cb) {
+    cb(null, 'profile-' + Date.now() + path.extname(file.originalname));
+  }
+});
+
+const profileUpload = multer({
+  storage: storage,
+  limits: { fileSize: 2000000 }, // 2MB
+  fileFilter: function (req, file, cb) {
+    const filetypes = /jpeg|jpg|png/;
+    const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = filetypes.test(file.mimetype);
+    
+    if (mimetype && extname) {
+      return cb(null, true);
+    } else {
+      cb('Error: Images Only!');
+    }
+  }
+}).single('profilePicture');
 
 // Helper function to generate JWT token
 const generateToken = (user) => {
@@ -204,50 +233,69 @@ exports.getCurrentUser = async (req, res) => {
 // @route   PUT /api/auth/profile
 // @access  Private
 exports.updateProfile = async (req, res) => {
-  const {
-    fullName,
-    phone,
-    dateOfBirth,
-    gender,
-    address
-  } = req.body;
-
-  try {
-    if (req.user.id === 'admin_static_id') {
-      return res.status(400).json({ msg: 'Admin profile tidak dapat diubah' });
+  profileUpload(req, res, async (err) => {
+    if (err) {
+      return res.status(400).json({ msg: err });
     }
 
-    const user = await User.findById(req.user.id);
-    if (!user) {
-      return res.status(404).json({ msg: 'User tidak ditemukan' });
-    }
-
-    // Update profile fields
-    if (fullName !== undefined) user.profile.fullName = fullName;
-    if (phone !== undefined) user.profile.phone = phone;
-    if (dateOfBirth !== undefined) user.profile.dateOfBirth = dateOfBirth;
-    if (gender !== undefined) user.profile.gender = gender;
-    if (address !== undefined) user.profile.address = address;
-
-    await user.save();
-
-    res.json({
-      user: {
-        id: user._id,
-        username: user.username,
-        email: user.email,
-        role: user.role,
-        profile: user.profile
+    try {
+      if (req.user.id === 'admin_static_id') {
+        return res.status(400).json({ msg: 'Admin profile tidak dapat diubah' });
       }
-    });
-  } catch (err) {
-    console.error(err.message);
-    if (err.name === 'ValidationError') {
-      const errors = Object.values(err.errors).map(error => error.message);
-      return res.status(400).json({ msg: errors.join(', ') });
+
+      const user = await User.findById(req.user.id);
+      if (!user) {
+        return res.status(404).json({ msg: 'User tidak ditemukan' });
+      }
+
+      const { fullName, phone, dateOfBirth, gender, address } = req.body;
+
+      // Update profile fields
+      if (fullName !== undefined) user.profile.fullName = fullName;
+      if (phone !== undefined) user.profile.phone = phone;
+      if (dateOfBirth !== undefined) user.profile.dateOfBirth = dateOfBirth;
+      if (gender !== undefined) user.profile.gender = gender;
+      if (address !== undefined) {
+        // Handle address as JSON string or object
+        if (typeof address === 'string') {
+          user.profile.address = JSON.parse(address);
+        } else {
+          user.profile.address = address;
+        }
+      }
+
+      // Handle profile picture upload
+      if (req.file) {
+        // Delete old profile picture if exists
+        if (user.profile.profilePicture) {
+          const oldPath = path.join(__dirname, '..', user.profile.profilePicture);
+          fs.unlink(oldPath, (unlinkErr) => {
+            if (unlinkErr) console.error('Failed to delete old profile picture');
+          });
+        }
+        user.profile.profilePicture = req.file.path;
+      }
+
+      await user.save();
+
+      res.json({
+        user: {
+          id: user._id,
+          username: user.username,
+          email: user.email,
+          role: user.role,
+          profile: user.profile
+        }
+      });
+    } catch (err) {
+      console.error(err.message);
+      if (err.name === 'ValidationError') {
+        const errors = Object.values(err.errors).map(error => error.message);
+        return res.status(400).json({ msg: errors.join(', ') });
+      }
+      res.status(500).send('Server error');
     }
-    res.status(500).send('Server error');
-  }
+  });
 };
 
 // @desc    Change user password

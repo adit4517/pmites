@@ -95,9 +95,9 @@ const LoginPage = () => {
             />
           </div>
           
-                    <div className="form-group">
+          <div className="form-group">
             <label htmlFor="password">Password</label>
-            <div style={{ position: 'relative' }}>
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
               <input
                 type={showPassword ? 'text' : 'password'}
                 name="password"
@@ -107,7 +107,11 @@ const LoginPage = () => {
                 placeholder="Masukkan password"
                 required
                 autoComplete="current-password"
-                style={{ paddingRight: '45px' }}
+                style={{ 
+                  paddingRight: '45px',
+                  width: '100%',
+                  boxSizing: 'border-box'
+                }}
               />
               <button
                 type="button"
@@ -116,18 +120,17 @@ const LoginPage = () => {
                 style={{
                   position: 'absolute',
                   right: '12px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
                   background: 'none',
                   border: 'none',
                   cursor: 'pointer',
                   padding: '5px',
                   fontSize: '18px',
                   color: 'var(--text-secondary)',
-                  lineHeight: '1',
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center'
+                  justifyContent: 'center',
+                  width: '30px',
+                  height: '30px'
                 }}
               >
                 {showPassword ? '👁️' : '👁️‍🗨️'}
