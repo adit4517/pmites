@@ -167,7 +167,7 @@ const LoginPage = () => {
               transition: 'all 0.3s'
             }}
           >
-            Daftar Sebagai PMI
+            Daftar
           </Link>
         </div>
 

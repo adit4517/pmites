@@ -17,7 +17,7 @@ const LandingPage = () => {
   };
 
   return (
-    <div style={{ minHeight: '100vh', fontFamily: 'Poppins, sans-serif' }}>
+    <div style={{ minHeight: '100vh', fontFamily: 'Poppins, sans-serif'}}>
       {/* Navbar */}
       <nav style={{
         position: 'fixed',
@@ -36,7 +36,7 @@ const LandingPage = () => {
           padding: '0 20px',
           display: 'flex',
           justifyContent: 'space-between',
-          alignItems: 'center'
+          alignItems: 'center',
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
             <div style={{
@@ -125,6 +125,7 @@ const LandingPage = () => {
       {/* Hero Section */}
       <section id="home" style={{
         minHeight: '100vh',
+        width: '100vw', 
         background: 'linear-gradient(135deg, #2C3E50 0%, #3498DB 100%)',
         display: 'flex',
         alignItems: 'center',
@@ -138,7 +139,7 @@ const LandingPage = () => {
           width: '300px',
           height: '300px',
           borderRadius: '50%',
-          background: 'rgba(255,255,255,0.05)',
+          background: 'rgba(255, 0, 0, 0)',
           top: '-100px',
           right: '-100px'
         }} />
@@ -147,7 +148,7 @@ const LandingPage = () => {
           width: '200px',
           height: '200px',
           borderRadius: '50%',
-          background: 'rgba(255,255,255,0.05)',
+          background: 'rgba(255, 255, 255, 0.05)',
           bottom: '50px',
           left: '-50px'
         }} />
@@ -412,7 +413,7 @@ const LandingPage = () => {
       {/* About/Process Section */}
       <section id="about" style={{
         background: 'linear-gradient(135deg, #ECF0F1 0%, #BDC3C7 100%)',
-        padding: '80px 20px'
+        padding: '80px 0'
       }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: '60px' }}>

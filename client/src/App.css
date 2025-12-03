@@ -186,6 +186,12 @@ body {
   background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
   min-height: 100vh;
   padding: 20px;
+  width: 100vw;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+
 }
 
 .login-box {
@@ -213,6 +219,18 @@ body {
 .login-form .form-group {
   margin-bottom: 20px;
   text-align: left;
+}
+
+.form-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.form-save {
+  display: flex;
+  gap: 5px;
+  margin-top: 10px;
 }
 
 .login-form label {

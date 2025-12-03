@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useContext, useCallback } from 'react';
 import axios from 'axios';
+import * as XLSX from 'xlsx';
 import { AuthContext } from '../../App';
 
 const DataPmiPage = () => {
@@ -9,6 +10,7 @@ const DataPmiPage = () => {
   const [pmiData, setPmiData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [exporting, setExporting] = useState(false);
   
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedPmi, setSelectedPmi] = useState(null);
@@ -79,8 +81,126 @@ const DataPmiPage = () => {
     }
   };
 
+  // Fungsi untuk export ke Excel
+  const handleExportToExcel = async () => {
+    if (pmiData.length === 0) {
+      showNotification('Tidak ada data untuk diekspor', 'error');
+      return;
+    }
+
+    setExporting(true);
+    
+    try {
+      // Siapkan data untuk Excel
+      const excelData = pmiData.map((pmi, index) => {
+        // Format keterampilan
+        const keterampilan = Array.isArray(pmi.keterampilan) 
+          ? pmi.keterampilan.join(', ') 
+          : '';
+
+        // Format dokumen yang sudah diupload
+        const dokumenList = [];
+        if (pmi.dokumen) {
+          Object.entries(pmi.dokumen).forEach(([key, value]) => {
+            if (value) {
+              const docName = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+              dokumenList.push(docName);
+            }
+          });
+        }
+
+        return {
+          'No': index + 1,
+          'ID PMI': pmi.pmiId || '-',
+          'Nama Lengkap': pmi.nama || '-',
+          'Asal Kecamatan': pmi.asal?.kecamatan || '-',
+          'Asal Desa': pmi.asal?.desa || '-',
+          'Jenis Kelamin': pmi.jenisKelamin || '-',
+          'Negara Tujuan': pmi.negaraTujuan || '-',
+          'Profesi': pmi.profesi || '-',
+          'Pendidikan Terakhir': pmi.pendidikanTerakhir || '-',
+          'Keterampilan': keterampilan || '-',
+          'Pengalaman Kerja': pmi.pengalamanKerja || '-',
+          'Rencana Berangkat': pmi.waktuBerangkat ? new Date(pmi.waktuBerangkat).toLocaleDateString('id-ID') : '-',
+          'Status': pmi.statusLabel || '-',
+          'Tanggal Dibuat': pmi.createdAt ? new Date(pmi.createdAt).toLocaleDateString('id-ID') : '-',
+          'Tanggal Submit': pmi.submittedAt ? new Date(pmi.submittedAt).toLocaleDateString('id-ID') : '-',
+          'Tanggal Disetujui': pmi.approvedAt ? new Date(pmi.approvedAt).toLocaleDateString('id-ID') : '-',
+          'Tanggal Ditolak': pmi.rejectedAt ? new Date(pmi.rejectedAt).toLocaleDateString('id-ID') : '-',
+          'Tanggal Berangkat': pmi.departureDate ? new Date(pmi.departureDate).toLocaleDateString('id-ID') : '-',
+          'Tanggal Pulang': pmi.returnDate ? new Date(pmi.returnDate).toLocaleDateString('id-ID') : '-',
+          'Dokumen Terupload': dokumenList.join(', ') || '-',
+          'Kelengkapan Dokumen': pmi.documentCompleteness ? `${pmi.documentCompleteness.percentage}%` : '-',
+          'Catatan Revisi': pmi.revisionNotes || '-',
+          'Alasan Penolakan': pmi.rejectionReason || '-',
+          'Username User': pmi.user?.username || '-',
+          'Email User': pmi.user?.email || '-',
+          'Nama Lengkap User': pmi.user?.profile?.fullName || '-',
+          'NIK': pmi.user?.profile?.nik || '-',
+          'No. Telepon': pmi.user?.profile?.phone || '-'
+        };
+      });
+
+      // Buat workbook baru
+      const wb = XLSX.utils.book_new();
+      
+      // Konversi data ke worksheet
+      const ws = XLSX.utils.json_to_sheet(excelData);
+
+      // Set lebar kolom
+      const columnWidths = [
+        { wch: 5 },   // No
+        { wch: 12 },  // ID PMI
+        { wch: 25 },  // Nama Lengkap
+        { wch: 15 },  // Asal Kecamatan
+        { wch: 15 },  // Asal Desa
+        { wch: 15 },  // Jenis Kelamin
+        { wch: 20 },  // Negara Tujuan
+        { wch: 25 },  // Profesi
+        { wch: 18 },  // Pendidikan Terakhir
+        { wch: 30 },  // Keterampilan
+        { wch: 30 },  // Pengalaman Kerja
+        { wch: 15 },  // Rencana Berangkat
+        { wch: 15 },  // Status
+        { wch: 15 },  // Tanggal Dibuat
+        { wch: 15 },  // Tanggal Submit
+        { wch: 15 },  // Tanggal Disetujui
+        { wch: 15 },  // Tanggal Ditolak
+        { wch: 15 },  // Tanggal Berangkat
+        { wch: 15 },  // Tanggal Pulang
+        { wch: 40 },  // Dokumen Terupload
+        { wch: 18 },  // Kelengkapan Dokumen
+        { wch: 30 },  // Catatan Revisi
+        { wch: 30 },  // Alasan Penolakan
+        { wch: 15 },  // Username User
+        { wch: 25 },  // Email User
+        { wch: 25 },  // Nama Lengkap User
+        { wch: 18 },  // NIK
+        { wch: 15 }   // No. Telepon
+      ];
+      ws['!cols'] = columnWidths;
+
+      // Tambahkan worksheet ke workbook
+      XLSX.utils.book_append_sheet(wb, ws, 'Data PMI');
+
+      // Generate nama file dengan timestamp
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+      const fileName = `Data_PMI_Rembang_${timestamp}.xlsx`;
+
+      // Download file
+      XLSX.writeFile(wb, fileName);
+
+      showNotification(`Data berhasil diekspor ke ${fileName}`, 'success');
+    } catch (err) {
+      console.error('Error exporting to Excel:', err);
+      showNotification('Gagal mengekspor data ke Excel', 'error');
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const getStatusBadgeClass = (status) => {
-    const colors = {
+    const statusColors = {
       'draft': 'background: #95a5a6; color: white;',
       'submitted': 'background: #3498db; color: white;',
       'under_review': 'background: #f39c12; color: white;',
@@ -91,8 +211,16 @@ const DataPmiPage = () => {
       'departed': 'background: #1abc9c; color: white;',
       'returned': 'background: #34495e; color: white;'
     };
-    return colors[status] || 'background: #95a5a6; color: white;';
+    return statusColors[status] || 'background: #95a5a6; color: white;';
   };
+
+  if (loading) {
+    return (
+      <div style={{ padding: '40px', textAlign: 'center' }}>
+        <p>Memuat data...</p>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -107,6 +235,22 @@ const DataPmiPage = () => {
 
       <div className="dashboard-header">
         <h1>Data PMI</h1>
+        <button 
+          className="submit-btn" 
+          onClick={handleExportToExcel}
+          disabled={exporting || pmiData.length === 0}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}
+        >
+          {exporting ? (
+            <>⏳ Mengekspor...</>
+          ) : (
+            <>📊 Export ke Excel</>
+          )}
+        </button>
       </div>
       
       {/* Filter & Search Section */}

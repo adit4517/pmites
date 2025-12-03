@@ -233,255 +233,340 @@ const UserProfile = () => {
 
       <h1>Profil Saya</h1>
 
-      <div className="dashboard-grid" style={{ marginTop: '20px' }}>
-        {/* Profile Picture Card */}
-        <div className="dashboard-card">
-          <h3>Foto Profil</h3>
-          <div style={{ 
-            display: 'flex', 
-            flexDirection: 'column', 
-            alignItems: 'center',
-            marginTop: '20px'
-          }}>
-            {profilePicturePreview ? (
-              <img 
-                src={profilePicturePreview} 
-                alt="Profile" 
-                style={{
-                  width: '200px',
-                  height: '200px',
-                  objectFit: 'cover',
-                  borderRadius: '50%',
-                  border: '4px solid var(--accent-color)',
-                  marginBottom: '20px'
-                }}
-                onError={(e) => {
-                  e.target.style.display = 'none';
-                  e.target.nextSibling.style.display = 'flex';
-                }}
-              />
-            ) : null}
-            <div style={{
-              width: '200px',
-              height: '200px',
-              background: '#ecf0f1',
-              borderRadius: '50%',
-              border: '4px solid var(--accent-color)',
-              display: profilePicturePreview ? 'none' : 'flex',
+      <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+        gap: '20px',
+        marginTop: '20px',
+        maxWidth: '1400px'
+      }}>
+        
+        {/* Left Column - Profile Picture & Account Info */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          {/* Profile Picture Card */}
+          <div className="dashboard-card">
+            <h3>Foto Profil</h3>
+            <div style={{ 
+              display: 'flex', 
+              flexDirection: 'column', 
               alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '5em',
-              color: '#95a5a6',
-              marginBottom: '20px'
+              marginTop: '20px'
             }}>
-              👤
+              {profilePicturePreview ? (
+                <img 
+                  src={profilePicturePreview} 
+                  alt="Profile" 
+                  style={{
+                    width: '180px',
+                    height: '180px',
+                    objectFit: 'cover',
+                    borderRadius: '50%',
+                    border: '4px solid var(--accent-color)',
+                    marginBottom: '20px',
+                    boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
+                  }}
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                    e.target.nextSibling.style.display = 'flex';
+                  }}
+                />
+              ) : null}
+              <div style={{
+                width: '180px',
+                height: '180px',
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                borderRadius: '50%',
+                border: '4px solid var(--accent-color)',
+                display: profilePicturePreview ? 'none' : 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '5em',
+                color: '#fff',
+                marginBottom: '20px',
+                boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
+              }}>
+                👤
+              </div>
+              
+              {editing && (
+                <div style={{ width: '100%', textAlign: 'center' }}>
+                  <label style={{ 
+                    display: 'inline-block',
+                    padding: '10px 20px',
+                    background: 'var(--accent-color)',
+                    color: 'white',
+                    borderRadius: '5px',
+                    cursor: 'pointer',
+                    marginBottom: '10px'
+                  }}>
+                    Pilih Foto
+                    <input 
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileChange}
+                      style={{ display: 'none' }}
+                    />
+                  </label>
+                  <small style={{ display: 'block', color: 'var(--text-secondary)', fontSize: '0.85em' }}>
+                    Maksimal 2MB. Format: JPG, PNG
+                  </small>
+                </div>
+              )}
             </div>
+          </div>
+
+          {/* Informasi Akun */}
+          <div className="dashboard-card">
+            <h3 style={{ marginBottom: '20px', borderBottom: '2px solid var(--accent-color)', paddingBottom: '10px' }}>
+              Informasi Akun
+            </h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '0.9em' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #eee' }}>
+                <span style={{ color: 'var(--text-secondary)' }}>Username:</span>
+                <strong>{user?.username}</strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #eee' }}>
+                <span style={{ color: 'var(--text-secondary)' }}>Email:</span>
+                <strong>{user?.email}</strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #eee' }}>
+                <span style={{ color: 'var(--text-secondary)' }}>NIK:</span>
+                <strong>{user?.profile?.nik}</strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #eee' }}>
+                <span style={{ color: 'var(--text-secondary)' }}>Status Akun:</span>
+                <span style={{ 
+                  color: user?.isActive ? 'var(--success-color)' : 'var(--error-color)',
+                  fontWeight: 'bold',
+                  padding: '4px 12px',
+                  borderRadius: '12px',
+                  background: user?.isActive ? 'rgba(46, 213, 115, 0.1)' : 'rgba(255, 71, 87, 0.1)',
+                  fontSize: '0.85em'
+                }}>
+                  {user?.isActive ? '✓ Aktif' : '✗ Tidak Aktif'}
+                </span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0' }}>
+                <span style={{ color: 'var(--text-secondary)' }}>Terverifikasi:</span>
+                <span style={{ 
+                  color: user?.isVerified ? 'var(--success-color)' : 'var(--warning-color)',
+                  fontWeight: 'bold',
+                  padding: '4px 12px',
+                  borderRadius: '12px',
+                  background: user?.isVerified ? 'rgba(46, 213, 115, 0.1)' : 'rgba(255, 184, 0, 0.1)',
+                  fontSize: '0.85em'
+                }}>
+                  {user?.isVerified ? '✓ Terverifikasi' : '⚠ Belum'}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column - Personal Data & Security */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          {/* Data Pribadi */}
+          <div className="dashboard-card">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '2px solid var(--accent-color)', paddingBottom: '10px' }}>
+              <h3 style={{ margin: 0 }}>Data Pribadi</h3>
+              {!editing && (
+                <button 
+                  className="edit-btn" 
+                  onClick={() => setEditing(true)}
+                  style={{ padding: '8px 20px', fontSize: '0.9em' }}
+                >
+                  ✏️ Edit
+                </button>
+              )}
+            </div>
+
+            {editing ? (
+              <form onSubmit={handleUpdateProfile} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                <div className="form-group">
+                  <label style={{ fontWeight: '600', marginBottom: '5px', display: 'block' }}>Nama Lengkap</label>
+                  <input
+                    type="text"
+                    name="fullName"
+                    value={formData.fullName}
+                    onChange={handleChange}
+                    required
+                    style={{ width: '100%', padding: '10px', borderRadius: '5px', border: '1px solid #ddd' }}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label style={{ fontWeight: '600', marginBottom: '5px', display: 'block' }}>Nomor Telepon</label>
+                  <input
+                    type="tel"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleChange}
+                    required
+                    style={{ width: '100%', padding: '10px', borderRadius: '5px', border: '1px solid #ddd' }}
+                  />
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                  <div className="form-group">
+                    <label style={{ fontWeight: '600', marginBottom: '5px', display: 'block' }}>Tanggal Lahir</label>
+                    <input
+                      type="date"
+                      name="dateOfBirth"
+                      value={formData.dateOfBirth}
+                      onChange={handleChange}
+                      required
+                      style={{ width: '100%', padding: '10px', borderRadius: '5px', border: '1px solid #ddd' }}
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label style={{ fontWeight: '600', marginBottom: '5px', display: 'block' }}>Jenis Kelamin</label>
+                    <select
+                      name="gender"
+                      value={formData.gender}
+                      onChange={handleChange}
+                      required
+                      style={{ width: '100%', padding: '10px', borderRadius: '5px', border: '1px solid #ddd' }}
+                    >
+                      <option value="Laki-laki">Laki-laki</option>
+                      <option value="Perempuan">Perempuan</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label style={{ fontWeight: '600', marginBottom: '5px', display: 'block' }}>Alamat Lengkap</label>
+                  <textarea
+                    name="address.fullAddress"
+                    value={formData.address.fullAddress}
+                    onChange={handleChange}
+                    rows={3}
+                    style={{ width: '100%', padding: '10px', borderRadius: '5px', border: '1px solid #ddd', resize: 'vertical' }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                  <button type="submit" className="submit-btn" style={{ flex: 1 }}>
+                    💾 Simpan Perubahan
+                  </button>
+                  <button 
+                    type="button" 
+                    className="reset-btn" 
+                    onClick={() => {
+                      setEditing(false);
+                      setProfilePicture(null);
+                      fetchUserData();
+                    }}
+                    style={{ flex: 1 }}
+                  >
+                    ✖ Batal
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '0.9em' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px', background: '#f8f9fa', borderRadius: '5px' }}>
+                  <span style={{ color: 'var(--text-secondary)', fontWeight: '500' }}>Nama:</span>
+                  <strong>{user?.profile?.fullName}</strong>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px', background: '#f8f9fa', borderRadius: '5px' }}>
+                  <span style={{ color: 'var(--text-secondary)', fontWeight: '500' }}>Telepon:</span>
+                  <strong>{user?.profile?.phone}</strong>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px', background: '#f8f9fa', borderRadius: '5px' }}>
+                  <span style={{ color: 'var(--text-secondary)', fontWeight: '500' }}>Tanggal Lahir:</span>
+                  <strong>{new Date(user?.profile?.dateOfBirth).toLocaleDateString('id-ID')}</strong>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px', background: '#f8f9fa', borderRadius: '5px' }}>
+                  <span style={{ color: 'var(--text-secondary)', fontWeight: '500' }}>Jenis Kelamin:</span>
+                  <strong>{user?.profile?.gender}</strong>
+                </div>
+                <div style={{ padding: '10px', background: '#f8f9fa', borderRadius: '5px' }}>
+                  <span style={{ color: 'var(--text-secondary)', fontWeight: '500', display: 'block', marginBottom: '5px' }}>Alamat:</span>
+                  <strong>{user?.profile?.address?.fullAddress || '-'}</strong>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Keamanan */}
+          <div className="dashboard-card">
+            <h3 style={{ marginBottom: '20px', borderBottom: '2px solid var(--accent-color)', paddingBottom: '10px' }}>
+              🔒 Keamanan
+            </h3>
             
-            {editing && (
-              <div style={{ width: '100%' }}>
-                <input 
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileChange}
-                  style={{ marginBottom: '10px' }}
-                />
-                <small style={{ display: 'block', color: 'var(--text-secondary)', fontSize: '0.85em' }}>
-                  Maksimal 2MB. Format: JPG, PNG
-                </small>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Informasi Akun */}
-        <div className="dashboard-card">
-          <h3>Informasi Akun</h3>
-          <div style={{ marginTop: '15px', fontSize: '0.9em' }}>
-            <p><strong>Username:</strong> {user?.username}</p>
-            <p><strong>Email:</strong> {user?.email}</p>
-            <p><strong>NIK:</strong> {user?.profile?.nik}</p>
-            <p><strong>Status Akun:</strong> {' '}
-              <span style={{ 
-                color: user?.isActive ? 'var(--success-color)' : 'var(--error-color)',
-                fontWeight: 'bold'
-              }}>
-                {user?.isActive ? 'Aktif' : 'Tidak Aktif'}
-              </span>
-            </p>
-            <p><strong>Terverifikasi:</strong> {' '}
-              <span style={{ 
-                color: user?.isVerified ? 'var(--success-color)' : 'var(--warning-color)',
-                fontWeight: 'bold'
-              }}>
-                {user?.isVerified ? 'Ya' : 'Belum'}
-              </span>
-            </p>
-          </div>
-        </div>
-
-        {/* Data Pribadi */}
-        <div className="dashboard-card" style={{ gridColumn: 'span 2' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h3>Data Pribadi</h3>
-            {!editing && (
-              <button className="edit-btn" onClick={() => setEditing(true)}>
-                Edit
-              </button>
-            )}
-          </div>
-
-          {editing ? (
-            <form onSubmit={handleUpdateProfile} style={{ marginTop: '15px' }}>
-              <div className="form-group">
-                <label>Nama Lengkap</label>
-                <input
-                  type="text"
-                  name="fullName"
-                  value={formData.fullName}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Nomor Telepon</label>
-                <input
-                  type="tel"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Tanggal Lahir</label>
-                <input
-                  type="date"
-                  name="dateOfBirth"
-                  value={formData.dateOfBirth}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Jenis Kelamin</label>
-                <select
-                  name="gender"
-                  value={formData.gender}
-                  onChange={handleChange}
-                  required
-                >
-                  <option value="Laki-laki">Laki-laki</option>
-                  <option value="Perempuan">Perempuan</option>
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label>Alamat Lengkap</label>
-                <textarea
-                  name="address.fullAddress"
-                  value={formData.address.fullAddress}
-                  onChange={handleChange}
-                  rows={3}
-                />
-              </div>
-
-              <div className="form-buttons">
-                <button type="submit" className="submit-btn">Simpan</button>
+            {!showPasswordForm ? (
+              <div>
+                <p style={{ marginBottom: '20px', fontSize: '0.9em', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
+                  Ubah password Anda secara berkala untuk menjaga keamanan akun
+                </p>
                 <button 
-                  type="button" 
-                  className="reset-btn" 
-                  onClick={() => {
-                    setEditing(false);
-                    setProfilePicture(null);
-                    fetchUserData();
-                  }}
+                  className="submit-btn" 
+                  onClick={() => setShowPasswordForm(true)}
+                  style={{ width: '100%' }}
                 >
-                  Batal
+                  🔑 Ubah Password
                 </button>
               </div>
-            </form>
-          ) : (
-            <div style={{ marginTop: '15px', fontSize: '0.9em' }}>
-              <p><strong>Nama:</strong> {user?.profile?.fullName}</p>
-              <p><strong>Telepon:</strong> {user?.profile?.phone}</p>
-              <p><strong>Tanggal Lahir:</strong> {new Date(user?.profile?.dateOfBirth).toLocaleDateString('id-ID')}</p>
-              <p><strong>Jenis Kelamin:</strong> {user?.profile?.gender}</p>
-              <p><strong>Alamat:</strong> {user?.profile?.address?.fullAddress || '-'}</p>
-            </div>
-          )}
-        </div>
+            ) : (
+              <form onSubmit={handleChangePassword} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                <div className="form-group">
+                  <label style={{ fontWeight: '600', marginBottom: '5px', display: 'block' }}>Password Lama</label>
+                  <input
+                    type="password"
+                    name="currentPassword"
+                    value={passwordData.currentPassword}
+                    onChange={handlePasswordChange}
+                    required
+                    style={{ width: '100%', padding: '10px', borderRadius: '5px', border: '1px solid #ddd' }}
+                  />
+                </div>
 
-        {/* Keamanan */}
-        <div className="dashboard-card">
-          <h3>Keamanan</h3>
-          
-          {!showPasswordForm ? (
-            <div style={{ marginTop: '15px' }}>
-              <p style={{ marginBottom: '15px', fontSize: '0.9em', color: 'var(--text-secondary)' }}>
-                Ubah password Anda secara berkala untuk menjaga keamanan akun
-              </p>
-              <button 
-                className="submit-btn" 
-                onClick={() => setShowPasswordForm(true)}
-              >
-                Ubah Password
-              </button>
-            </div>
-          ) : (
-            <form onSubmit={handleChangePassword} style={{ marginTop: '15px' }}>
-              <div className="form-group">
-                <label>Password Lama</label>
-                <input
-                  type="password"
-                  name="currentPassword"
-                  value={passwordData.currentPassword}
-                  onChange={handlePasswordChange}
-                  required
-                />
-              </div>
+                <div className="form-group">
+                  <label style={{ fontWeight: '600', marginBottom: '5px', display: 'block' }}>Password Baru</label>
+                  <input
+                    type="password"
+                    name="newPassword"
+                    value={passwordData.newPassword}
+                    onChange={handlePasswordChange}
+                    minLength={6}
+                    required
+                    style={{ width: '100%', padding: '10px', borderRadius: '5px', border: '1px solid #ddd' }}
+                  />
+                </div>
 
-              <div className="form-group">
-                <label>Password Baru</label>
-                <input
-                  type="password"
-                  name="newPassword"
-                  value={passwordData.newPassword}
-                  onChange={handlePasswordChange}
-                  minLength={6}
-                  required
-                />
-              </div>
+                <div className="form-group">
+                  <label style={{ fontWeight: '600', marginBottom: '5px', display: 'block' }}>Konfirmasi Password Baru</label>
+                  <input
+                    type="password"
+                    name="confirmPassword"
+                    value={passwordData.confirmPassword}
+                    onChange={handlePasswordChange}
+                    minLength={6}
+                    required
+                    style={{ width: '100%', padding: '10px', borderRadius: '5px', border: '1px solid #ddd' }}
+                  />
+                </div>
 
-              <div className="form-group">
-                <label>Konfirmasi Password Baru</label>
-                <input
-                  type="password"
-                  name="confirmPassword"
-                  value={passwordData.confirmPassword}
-                  onChange={handlePasswordChange}
-                  minLength={6}
-                  required
-                />
-              </div>
-
-              <div className="form-buttons">
-                <button type="submit" className="submit-btn">Ubah Password</button>
-                <button 
-                  type="button" 
-                  className="reset-btn" 
-                  onClick={() => {
-                    setShowPasswordForm(false);
-                    setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
-                  }}
-                >
-                  Batal
-                </button>
-              </div>
-            </form>
-          )}
+                <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                  <button type="submit" className="submit-btn" style={{ flex: 1 }}>
+                    💾 Ubah Password
+                  </button>
+                  <button 
+                    type="button" 
+                    className="reset-btn" 
+                    onClick={() => {
+                      setShowPasswordForm(false);
+                      setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+                    }}
+                    style={{ flex: 1 }}
+                  >
+                    ✖ Batal
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
         </div>
       </div>
     </div>

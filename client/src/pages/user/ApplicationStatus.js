@@ -117,7 +117,6 @@ const ApplicationStatus = () => {
     <div>
       <div className="dashboard-header">
         <h1>Status Aplikasi PMI</h1>
-        <Link to="/user/dashboard" className="view-btn">← Kembali</Link>
       </div>
 
       {/* Status Badge */}
@@ -344,9 +343,6 @@ const ApplicationStatus = () => {
           </>
         )}
 
-        <Link to="/user/dashboard" className="reset-btn">
-          Kembali ke Dashboard
-        </Link>
       </div>
     </div>
   );
