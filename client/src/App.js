@@ -23,6 +23,7 @@ import UserProfile from './pages/user/UserProfilePage';
 // Components
 import Navbar from './components/common/Navbar';
 import UserNavbar from './components/user/UserNavbar';
+import './styles/ResponsiveLayout.css';
 
 import './App.css';
 
