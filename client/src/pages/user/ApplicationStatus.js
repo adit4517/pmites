@@ -84,9 +84,68 @@ const ApplicationStatus = () => {
     window.open(`http://localhost:5000/${path}`, "_blank");
   };
 
-  const handleDownloadDocument = (pmiId, docField, fileName) => {
+  const downloadBlob = (blob, filename) => {
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename || "download";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+  };
+
+  const getFilenameFromDisposition = (disposition, fallbackName) => {
+    if (!disposition) return fallbackName;
+    const filenameMatch = disposition.match(
+      /filename\*=UTF-8''(.+)|filename"?([^";]+)"?/
+    );
+    if (filenameMatch) {
+      // support RFC5987 and normal filename
+      return decodeURIComponent(filenameMatch[1] || filenameMatch[2]);
+    }
+    return fallbackName;
+  };
+
+  // const handleDownloadDocument = (pmiId, docField, fileName) => {
+  //   const downloadUrl = `http://localhost:5000/api/pmi/download/${pmiId}/${docField}`;
+  //   window.open(downloadUrl, "_blank");
+  // };
+
+  const handleDownloadDocument = async (
+    pmiId,
+    docField,
+    fallbackName = "document"
+  ) => {
+    if (!state?.token) {
+      alert("Token tidak ditemukan. Silakan login ulang.");
+      return;
+    }
+
     const downloadUrl = `http://localhost:5000/api/pmi/download/${pmiId}/${docField}`;
-    window.open(downloadUrl, "_blank");
+    try {
+      const res = await axios.get(downloadUrl, {
+        headers: {
+          Authorization: `Bearer ${state.token}`,
+        },
+        responseType: "blob",
+      });
+
+      // Coba ambil filename dari header
+      const disposition =
+        res.headers["content-disposition"] ||
+        res.headers["Content-Disposition"];
+      const filename = getFilenameFromDisposition(
+        disposition,
+        `${fallbackName}`
+      );
+
+      downloadBlob(res.data, filename);
+    } catch (err) {
+      console.error("Error downloading file:", err);
+      const msg = err.response?.data?.msg || err.response?.data || err.message;
+      alert("Gagal mengunduh: " + msg);
+    }
   };
 
   const getStatusColor = (status) => {
@@ -323,6 +382,14 @@ const ApplicationStatus = () => {
                           <button
                             className="download-btn"
                             onClick={() =>
+                              handleDownloadDocument(application._id, key, key)
+                            }
+                          >
+                            Unduh
+                          </button>
+                          {/* <button
+                            className="download-btn"
+                            onClick={() =>
                               handleDownloadDocument(
                                 application._id,
                                 key,
@@ -331,7 +398,7 @@ const ApplicationStatus = () => {
                             }
                           >
                             Unduh
-                          </button>
+                          </button> */}
                         </td>
                       </tr>
                     ))}

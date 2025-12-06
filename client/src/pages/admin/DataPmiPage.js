@@ -64,14 +64,97 @@ const DataPmiPage = () => {
     setShowDetailModal(true);
   };
 
-  const handleDownload = (pmiId, docField, fileName) => {
-    const downloadUrl = `http://localhost:5000/api/pmi/download/${pmiId}/${docField}`;
-    window.open(downloadUrl, "_blank");
-  };
+  // const handleViewDocument = (path) => {
+  //   window.open(`http://localhost:5000/${path}`, "_blank");
+  // };
 
-  const handleViewDocument = (pmiId, docField) => {
+  const downloadBlob = (blob, filename) => {
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename || "download";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    };
+  
+    const getFilenameFromDisposition = (disposition, fallbackName) => {
+      if (!disposition) return fallbackName;
+      const filenameMatch = disposition.match(
+        /filename\*=UTF-8''(.+)|filename=\"?([^\";]+)\"?/
+      );
+      if (filenameMatch) {
+        // support RFC5987 and normal filename
+        return decodeURIComponent(filenameMatch[1] || filenameMatch[2]);
+      }
+      return fallbackName;
+    };
+  
+    // const handleDownloadDocument = (pmiId, docField, fileName) => {
+    //   const downloadUrl = `http://localhost:5000/api/pmi/download/${pmiId}/${docField}`;
+    //   window.open(downloadUrl, "_blank");
+    // };
+  
+    const handleDownloadDocument = async (
+      pmiId,
+      docField,
+      fallbackName = "document"
+    ) => {
+      if (!state?.token) {
+        alert("Token tidak ditemukan. Silakan login ulang.");
+        return;
+      }
+  
+      const downloadUrl = `http://localhost:5000/api/pmi/download/${pmiId}/${docField}`;
+      try {
+        const res = await axios.get(downloadUrl, {
+          headers: {
+            Authorization: `Bearer ${state.token}`,
+          },
+          responseType: "blob",
+        });
+  
+        // Coba ambil filename dari header
+        const disposition =
+          res.headers["content-disposition"] ||
+          res.headers["Content-Disposition"];
+        const filename = getFilenameFromDisposition(
+          disposition,
+          `${fallbackName}`
+        );
+  
+        downloadBlob(res.data, filename);
+      } catch (err) {
+        console.error("Error downloading file:", err);
+        const msg = err.response?.data?.msg || err.response?.data || err.message;
+        alert("Gagal mengunduh: " + msg);
+      }
+    };
+
+  const handleViewDocument = async (pmiId, docField) => {
+    if (!state?.token) {
+      alert("Token tidak ditemukan. Silakan login ulang.");
+      return;
+    }
+
     const viewUrl = `http://localhost:5000/api/pmi/view/${pmiId}/${docField}`;
-    window.open(viewUrl, "_blank");
+    try {
+      const res = await axios.get(viewUrl, {
+        headers: {
+          Authorization: `Bearer ${state.token}`,
+        },
+        responseType: "blob",
+      });
+
+      const blob = res.data;
+      const url = window.URL.createObjectURL(blob);
+      window.open(url, "_blank");
+    } catch (err) {
+      console.error("Error viewing file:", err);
+      const msg = err.response?.data?.msg || err.response?.data || err.message;
+      alert("Gagal melihat dokumen: " + msg);
+    }
   };
 
   const handleDelete = async (id) => {
@@ -670,18 +753,21 @@ const DataPmiPage = () => {
                               >
                                 Lihat
                               </button>
+                              {/* <button
+                            className="view-btn"
+                            onClick={() => handleViewDocument(path)}
+                            style={{ marginRight: "5px" }}
+                          >
+                            Lihat
+                          </button> */}
                               <button
-                                className="download-btn"
-                                onClick={() =>
-                                  handleDownload(
-                                    selectedPmi._id,
-                                    key,
-                                    "document"
-                                  )
-                                }
-                              >
-                                Unduh
-                              </button>
+                            className="download-btn"
+                            onClick={() =>
+                              handleDownloadDocument(selectedPmi._id, key, key)
+                            }
+                          >
+                            Unduh
+                          </button>
                             </>
                           ) : (
                             <span
